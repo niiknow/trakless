@@ -18,7 +18,7 @@ DUOT = $(BINS)/duo-test -p test/server -R spec -P $(PORT) -c "make build.js"
 # Default target.
 #
 
-default: test
+default: trakless
 
 #
 # Clean.
@@ -67,7 +67,7 @@ test-browser: $(BUILD)
 # Target for `trakless.js` file.
 #
 
-trakless.js: node_modules $(SRC)
+trakless: node_modules $(SRC)
 	@$(DUO) --standalone trakless --use duo-coffee src/index.coffee > trakless.js
 	@$(MINIFY) trakless.js --output trakless.min.js
 

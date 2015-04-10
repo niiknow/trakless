@@ -1,15 +1,13 @@
 defaults = require('defaults')
 clone = require('clone')
 cookie = require('cookie')
-Emitter = require('emitter')
-event = require('event')
-query = require('querystring')
-json = require('json')
-closest = require('closest')
 each = require('each')
+Emitter = require('emitter')
+query = require('querystring')
 store = require('segmentio-store.js')
 uuid = require('uuid')
 webanalyser = require('webanalyser')
+domevent = require('domevent')
 
 $defaultTracker = null
 $defaults = null
@@ -293,42 +291,13 @@ class trakless
   ###
   @getData: (el, attrName) ->
     attrValue = el.getAttribute(attrName)
-    return if (attrValue.indexOf('{') > 0) then json.parse(attrValue) else attrValue
+    return if (attrValue.indexOf('{') > 0) then domevent.parseJSON(attrValue) else attrValue
 
   ###*
-  # Delegate event `type` to `selector`
-  # and invoke `fn(e)`. A callback function
-  # is returned which may be passed to `.unbind()`.
+  # dom utility
   #
-  # @param {Element} el
-  # @param {String} selector
-  # @param {String} type
-  # @param {Function} fn
-  # @param {Boolean} capture
-  # @return {Function}
-  # @api public
   ###
-  @bind: (el, selector, type, fn, capture) ->
-    event.bind el, type, ((e) ->
-      target = e.target or e.srcElement
-      e.delegateTarget = closest(target, selector, true, el)
-      if e.delegateTarget
-        fn.call el, e
-      return
-    ), capture
-
-  ###*
-  # Unbind event `type`'s callback `fn`.
-  #
-  # @param {Element} el
-  # @param {String} type
-  # @param {Function} fn
-  # @param {Boolean} capture
-  # @api public
-  ###
-  @unbind: (el, type, fn, capture) ->
-    event.unbind el, type, fn, capture
-    return
+  @event: domevent
 
 # auto init if document is available
 if (document?)
