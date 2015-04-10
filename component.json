@@ -1,0 +1,37 @@
+{
+  "name": "trakless",
+  "main": "trakless.js",
+  "repo": "niiknow/trakless",
+  "description": "Pixel tracking analytic.",
+  "version": "1.0.0",
+  "keywords": [
+    "analytic",
+    "pixel"
+  ],
+  "dependencies": {
+    "avetisk/defaults": "0.0.4",
+    "component/clone": "0.1.0",
+    "component/cookie": "1.1.1",
+    "component/emitter": "1.1.0",
+    "component/event": "0.1.1",
+    "component/querystring": "1.3.0",
+    "component/json": "*",
+    "component/closest": "*",
+    "component/each": "*",
+    "segmentio/store.js": "2.0.0",
+    "gjohnson/uuid": "0.0.1",
+    "niiknow/webanalyser": "*"
+  },
+  "development": {
+    "yields/coverage": "*",
+    "component/jquery": "*",
+    "component/assert": "*",
+    "ianstormtaylor/trigger-event": "*",
+    "jkroso/equals": "*",
+    "segmentio/protocol": "*",
+    "ianstormtaylor/sinon": "duo",
+    "segmentio/when": "*",
+    "timoxley/next-tick": "*",
+    "yields/gravy": "*"
+  }
+}
