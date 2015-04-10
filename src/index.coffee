@@ -11,6 +11,7 @@ store = require('segmentio-store.js')
 uuid = require('uuid')
 webanalyser = require('webanalyser')
 
+$defaultTracker = null
 $defaults = null
 $siteid = 0
 $pixel = '/pixel.gif'
@@ -273,6 +274,15 @@ class trakless
     rst.siteid = siteid or $siteid
     rst.pixel = pixelUrl or $pixel
     return rst
+
+  ###*
+  # get the default racker
+  #
+  ###
+  @getDefaultTracker: () ->
+    if (!$defaultTracker?)
+      $defaultTracker = trakless.getTracker()
+    return $defaultTracker
 
   ###*
   # you can provide different siteid and pixelUrl for in multi-tracker and site scenario

@@ -92,7 +92,7 @@
 })({
 1: [function(require, module, exports) {
 (function() {
-  var $defaults, $pixel, $sessionid, $siteid, $uuid, Emitter, attrs, clone, closest, cookie, defaults, each, event, fn, getImage, i, j, json, k, len, len1, prefix, query, ref, ref1, script, store, tracker, trakless, uuid, webanalyser;
+  var $defaultTracker, $defaults, $pixel, $sessionid, $siteid, $uuid, Emitter, attrs, clone, closest, cookie, defaults, each, event, fn, getImage, i, j, json, k, len, len1, prefix, query, ref, ref1, script, store, tracker, trakless, uuid, webanalyser;
 
   defaults = require('defaults');
 
@@ -117,6 +117,8 @@
   uuid = require('uuid');
 
   webanalyser = require('webanalyser');
+
+  $defaultTracker = null;
 
   $defaults = null;
 
@@ -438,6 +440,19 @@
       rst.siteid = siteid || $siteid;
       rst.pixel = pixelUrl || $pixel;
       return rst;
+    };
+
+
+    /**
+     * get the default racker
+    #
+     */
+
+    trakless.getDefaultTracker = function() {
+      if ($defaultTracker == null) {
+        $defaultTracker = trakless.getTracker();
+      }
+      return $defaultTracker;
     };
 
 
