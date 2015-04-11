@@ -2695,76 +2695,44 @@ module.exports = function uuid(a){
 (function() {
   (function(document, navigator, screen, location) {
     'use strict';
-    var $endTime, $onLoadHandlers, $startTime, $timeoutId, canonical, canonicalPath, canonicalUrl, domevent, result, url, webanalyser;
-    canonical = require('canonical');
-    url = require('url');
+    var $defaults, $endTime, $onLoadHandlers, $startTime, $timeoutId, defaults, domevent, flashdetect, result, webanalyser;
+    defaults = require('defaults');
     domevent = require('domevent');
+    flashdetect = require('flashdetect');
     $startTime = new Date().getTime();
     $endTime = new Date().getTime();
     $timeoutId = null;
     $onLoadHandlers = [];
-
-    /**
-     * Return the canonical path for the page.
-    #
-     * @return {String}
-     */
-    canonicalPath = function() {
-      var canon, parsed;
-      canon = canonical();
-      if (!canon) {
-        return location.pathname;
-      }
-      parsed = url.parse(canon);
-      return parsed.pathname;
+    $defaults = {
+      sr: screen.width + "x" + screen.height,
+      vp: screen.availWidth + "x" + screen.availHeight,
+      sd: screen.colorDepth,
+      je: navigator.javaEnabled ? navigator.javaEnabled() : false,
+      ul: navigator.languages ? navigator.languages[0] : navigator.language || navigator.userLanguage || navigator.browserLanguage
     };
 
     /**
-     * Return the canonical URL for the page concat the given `search`
-     * and strip the hash.
-    #
-     * @param {String} search
-     * @return {String}
+     * webanalyser
      */
-    canonicalUrl = function(search) {
-      var canon, i;
-      canon = canonical();
-      if (canon) {
-        if (~canon.indexOf('?')) {
-          return canon;
-        } else {
-          return canon + search;
-        }
-      }
-      url = location.href;
-      i = url.indexOf('#');
-      if (-1 === i) {
-        return url;
-      } else {
-        return url.slice(0, i);
-      }
-    };
     webanalyser = (function() {
       function webanalyser() {}
 
       webanalyser.prototype.getResult = function() {
         var rst;
-        rst = {
-          sr: screen.width + "x" + screen.height,
-          vp: screen.availWidth + "x" + screen.availHeight,
-          sd: screen.colorDepth,
-          je: navigator.javaEnabled ? navigator.javaEnabled() : false,
-          ul: navigator.languages ? navigator.languages[0] : navigator.language || navigator.userLanguage || navigator.browserLanguage,
-          ds: "web",
-          dr: document.referrer,
-          dl: canonicalUrl(location.search),
-          dh: location.hostname,
-          dp: canonicalPath(),
-          dt: document.title,
-          z: new Date().getTime(),
-          clt: $endTime - $startTime
-        };
-        return rst;
+        if (defaults.dl == null) {
+          rst = {
+            dr: document.referrer,
+            dl: location.href,
+            dh: location.hostname,
+            dt: document.title,
+            z: new Date().getTime()
+          };
+          if (flashdetect.installed) {
+            rst.fl = flashdetect.major + " " + flashdetect.minor + " " + flashdetect.revisionStr;
+          }
+          $defaults = defaults(rst, $defaults);
+        }
+        return $defaults;
       };
 
       webanalyser.prototype.isReady = false;
@@ -2783,6 +2751,7 @@ module.exports = function uuid(a){
     result = new webanalyser();
     domevent.ready(function() {
       $endTime = new Date().getTime();
+      $defaults.clt = $endTime - $startTime;
       return result.isReady = true;
     });
     return module.exports = result;
@@ -2790,101 +2759,37 @@ module.exports = function uuid(a){
 
 }).call(this);
 
-}, {"canonical":2,"url":3,"domevent":4}],
+}, {"defaults":2,"domevent":3,"flashdetect":4}],
 2: [function(require, module, exports) {
-module.exports = function canonical () {
-  var tags = document.getElementsByTagName('link');
-  for (var i = 0, tag; tag = tags[i]; i++) {
-    if ('canonical' == tag.getAttribute('rel')) return tag.getAttribute('href');
-  }
-};
-}, {}],
-3: [function(require, module, exports) {
+'use strict';
 
 /**
- * Parse the given `url`.
+ * Merge default values.
  *
- * @param {String} str
+ * @param {Object} dest
+ * @param {Object} defaults
  * @return {Object}
  * @api public
  */
-
-exports.parse = function(url){
-  var a = document.createElement('a');
-  a.href = url;
-  return {
-    href: a.href,
-    host: a.host || location.host,
-    port: ('0' === a.port || '' === a.port) ? port(a.protocol) : a.port,
-    hash: a.hash,
-    hostname: a.hostname || location.hostname,
-    pathname: a.pathname.charAt(0) != '/' ? '/' + a.pathname : a.pathname,
-    protocol: !a.protocol || ':' == a.protocol ? location.protocol : a.protocol,
-    search: a.search,
-    query: a.search.slice(1)
-  };
-};
-
-/**
- * Check if `url` is absolute.
- *
- * @param {String} url
- * @return {Boolean}
- * @api public
- */
-
-exports.isAbsolute = function(url){
-  return 0 == url.indexOf('//') || !!~url.indexOf('://');
-};
-
-/**
- * Check if `url` is relative.
- *
- * @param {String} url
- * @return {Boolean}
- * @api public
- */
-
-exports.isRelative = function(url){
-  return !exports.isAbsolute(url);
-};
-
-/**
- * Check if `url` is cross domain.
- *
- * @param {String} url
- * @return {Boolean}
- * @api public
- */
-
-exports.isCrossDomain = function(url){
-  url = exports.parse(url);
-  var location = exports.parse(window.location.href);
-  return url.hostname !== location.hostname
-    || url.port !== location.port
-    || url.protocol !== location.protocol;
-};
-
-/**
- * Return default port for `protocol`.
- *
- * @param  {String} protocol
- * @return {String}
- * @api private
- */
-function port (protocol){
-  switch (protocol) {
-    case 'http:':
-      return 80;
-    case 'https:':
-      return 443;
-    default:
-      return location.port;
+var defaults = function (dest, src, recursive) {
+  for (var prop in src) {
+    if (recursive && dest[prop] instanceof Object && src[prop] instanceof Object) {
+      dest[prop] = defaults(dest[prop], src[prop], true);
+    } else if (! (prop in dest)) {
+      dest[prop] = src[prop];
+    }
   }
-}
+
+  return dest;
+};
+
+/**
+ * Expose `defaults`.
+ */
+module.exports = defaults;
 
 }, {}],
-4: [function(require, module, exports) {
+3: [function(require, module, exports) {
 myObj = null
 mydefine = function(h, F){
 	myObj = F().$;
@@ -2912,102 +2817,214 @@ h?""+c:B(c=c.valueOf())?'"'+r(c,/[\\\"\x00-\x1f\u2028\u2029]/g,O)+'"':x(c)?"["+t
 function(){N(z);z=h},!1);u.g=function(){m(C,W)};return{$:y,M:H,getter:{},setter:{}}});
 
 module.exports = myObj;
+}, {}],
+4: [function(require, module, exports) {
+/*
+Copyright (c) Copyright (c) 2007, Carl S. Yestrau All rights reserved.
+Code licensed under the BSD License: http://www.featureblend.com/license.txt
+Version: 1.0.4
+*/
+var flashdetect = new function(){
+    var self = this;
+    self.installed = false;
+    self.raw = "";
+    self.major = -1;
+    self.minor = -1;
+    self.revision = -1;
+    self.revisionStr = "";
+    var activeXDetectRules = [
+        {
+            "name":"ShockwaveFlash.ShockwaveFlash.7",
+            "version":function(obj){
+                return getActiveXVersion(obj);
+            }
+        },
+        {
+            "name":"ShockwaveFlash.ShockwaveFlash.6",
+            "version":function(obj){
+                var version = "6,0,21";
+                try{
+                    obj.AllowScriptAccess = "always";
+                    version = getActiveXVersion(obj);
+                }catch(err){}
+                return version;
+            }
+        },
+        {
+            "name":"ShockwaveFlash.ShockwaveFlash",
+            "version":function(obj){
+                return getActiveXVersion(obj);
+            }
+        }
+    ];
+    /**
+     * Extract the ActiveX version of the plugin.
+     * 
+     * @param {Object} The flash ActiveX object.
+     * @type String
+     */
+    var getActiveXVersion = function(activeXObj){
+        var version = -1;
+        try{
+            version = activeXObj.GetVariable("$version");
+        }catch(err){}
+        return version;
+    };
+    /**
+     * Try and retrieve an ActiveX object having a specified name.
+     * 
+     * @param {String} name The ActiveX object name lookup.
+     * @return One of ActiveX object or a simple object having an attribute of activeXError with a value of true.
+     * @type Object
+     */
+    var getActiveXObject = function(name){
+        var obj = -1;
+        try{
+            obj = new ActiveXObject(name);
+        }catch(err){
+            obj = {activeXError:true};
+        }
+        return obj;
+    };
+    /**
+     * Parse an ActiveX $version string into an object.
+     * 
+     * @param {String} str The ActiveX Object GetVariable($version) return value. 
+     * @return An object having raw, major, minor, revision and revisionStr attributes.
+     * @type Object
+     */
+    var parseActiveXVersion = function(str){
+        var versionArray = str.split(",");//replace with regex
+        return {
+            "raw":str,
+            "major":parseInt(versionArray[0].split(" ")[1], 10),
+            "minor":parseInt(versionArray[1], 10),
+            "revision":parseInt(versionArray[2], 10),
+            "revisionStr":versionArray[2]
+        };
+    };
+    /**
+     * Parse a standard enabledPlugin.description into an object.
+     * 
+     * @param {String} str The enabledPlugin.description value.
+     * @return An object having raw, major, minor, revision and revisionStr attributes.
+     * @type Object
+     */
+    var parseStandardVersion = function(str){
+        var descParts = str.split(/ +/);
+        var majorMinor = descParts[2].split(/\./);
+        var revisionStr = descParts[3];
+        return {
+            "raw":str,
+            "major":parseInt(majorMinor[0], 10),
+            "minor":parseInt(majorMinor[1], 10), 
+            "revisionStr":revisionStr,
+            "revision":parseRevisionStrToInt(revisionStr)
+        };
+    };
+    /**
+     * Parse the plugin revision string into an integer.
+     * 
+     * @param {String} The revision in string format.
+     * @type Number
+     */
+    var parseRevisionStrToInt = function(str){
+        return parseInt(str.replace(/[a-zA-Z]/g, ""), 10) || self.revision;
+    };
+    /**
+     * Is the major version greater than or equal to a specified version.
+     * 
+     * @param {Number} version The minimum required major version.
+     * @type Boolean
+     */
+    self.majorAtLeast = function(version){
+        return self.major >= version;
+    };
+    /**
+     * Is the minor version greater than or equal to a specified version.
+     * 
+     * @param {Number} version The minimum required minor version.
+     * @type Boolean
+     */
+    self.minorAtLeast = function(version){
+        return self.minor >= version;
+    };
+    /**
+     * Is the revision version greater than or equal to a specified version.
+     * 
+     * @param {Number} version The minimum required revision version.
+     * @type Boolean
+     */
+    self.revisionAtLeast = function(version){
+        return self.revision >= version;
+    };
+    /**
+     * Is the version greater than or equal to a specified major, minor and revision.
+     * 
+     * @param {Number} major The minimum required major version.
+     * @param {Number} (Optional) minor The minimum required minor version.
+     * @param {Number} (Optional) revision The minimum required revision version.
+     * @type Boolean
+     */
+    self.versionAtLeast = function(major){
+        var properties = [self.major, self.minor, self.revision];
+        var len = Math.min(properties.length, arguments.length);
+        for(i=0; i<len; i++){
+            if(properties[i]>=arguments[i]){
+                if(i+1<len && properties[i]==arguments[i]){
+                    continue;
+                }else{
+                    return true;
+                }
+            }else{
+                return false;
+            }
+        }
+    };
+    /**
+     * Constructor, sets raw, major, minor, revisionStr, revision and installed public properties.
+     */
+    self.flashdetect = function(){
+        if(navigator.plugins && navigator.plugins.length>0){
+            var type = 'application/x-shockwave-flash';
+            var mimeTypes = navigator.mimeTypes;
+            if(mimeTypes && mimeTypes[type] && mimeTypes[type].enabledPlugin && mimeTypes[type].enabledPlugin.description){
+                var version = mimeTypes[type].enabledPlugin.description;
+                var versionObj = parseStandardVersion(version);
+                self.raw = versionObj.raw;
+                self.major = versionObj.major;
+                self.minor = versionObj.minor; 
+                self.revisionStr = versionObj.revisionStr;
+                self.revision = versionObj.revision;
+                self.installed = true;
+            }
+        }else if(navigator.appVersion.indexOf("Mac")==-1 && window.execScript){
+            var version = -1;
+            for(var i=0; i<activeXDetectRules.length && version==-1; i++){
+                var obj = getActiveXObject(activeXDetectRules[i].name);
+                if(!obj.activeXError){
+                    self.installed = true;
+                    version = activeXDetectRules[i].version(obj);
+                    if(version!=-1){
+                        var versionObj = parseActiveXVersion(version);
+                        self.raw = versionObj.raw;
+                        self.major = versionObj.major;
+                        self.minor = versionObj.minor; 
+                        self.revision = versionObj.revision;
+                        self.revisionStr = versionObj.revisionStr;
+                    }
+                }
+            }
+        }
+    }();
+};
+flashdetect.JS_RELEASE = "1.0.4";
+
+module.exports = flashdetect;
+
 }, {}]}, {}, {"1":""})
 );
-}, {"canonical":23,"url":24,"domevent":11}],
-23: [function(require, module, exports) {
-module.exports = function canonical () {
-  var tags = document.getElementsByTagName('link');
-  for (var i = 0, tag; tag = tags[i]; i++) {
-    if ('canonical' == tag.getAttribute('rel')) return tag.getAttribute('href');
-  }
-};
-}, {}],
-24: [function(require, module, exports) {
-
-/**
- * Parse the given `url`.
- *
- * @param {String} str
- * @return {Object}
- * @api public
- */
-
-exports.parse = function(url){
-  var a = document.createElement('a');
-  a.href = url;
-  return {
-    href: a.href,
-    host: a.host || location.host,
-    port: ('0' === a.port || '' === a.port) ? port(a.protocol) : a.port,
-    hash: a.hash,
-    hostname: a.hostname || location.hostname,
-    pathname: a.pathname.charAt(0) != '/' ? '/' + a.pathname : a.pathname,
-    protocol: !a.protocol || ':' == a.protocol ? location.protocol : a.protocol,
-    search: a.search,
-    query: a.search.slice(1)
-  };
-};
-
-/**
- * Check if `url` is absolute.
- *
- * @param {String} url
- * @return {Boolean}
- * @api public
- */
-
-exports.isAbsolute = function(url){
-  return 0 == url.indexOf('//') || !!~url.indexOf('://');
-};
-
-/**
- * Check if `url` is relative.
- *
- * @param {String} url
- * @return {Boolean}
- * @api public
- */
-
-exports.isRelative = function(url){
-  return !exports.isAbsolute(url);
-};
-
-/**
- * Check if `url` is cross domain.
- *
- * @param {String} url
- * @return {Boolean}
- * @api public
- */
-
-exports.isCrossDomain = function(url){
-  url = exports.parse(url);
-  var location = exports.parse(window.location.href);
-  return url.hostname !== location.hostname
-    || url.port !== location.port
-    || url.protocol !== location.protocol;
-};
-
-/**
- * Return default port for `protocol`.
- *
- * @param  {String} protocol
- * @return {String}
- * @api private
- */
-function port (protocol){
-  switch (protocol) {
-    case 'http:':
-      return 80;
-    case 'https:':
-      return 443;
-    default:
-      return location.port;
-  }
-}
-
-}, {}],
+}, {"defaults":2,"domevent":11,"flashdetect":23}],
 11: [function(require, module, exports) {
 myObj = null
 mydefine = function(h, F){
@@ -3036,5 +3053,210 @@ h?""+c:B(c=c.valueOf())?'"'+r(c,/[\\\"\x00-\x1f\u2028\u2029]/g,O)+'"':x(c)?"["+t
 function(){N(z);z=h},!1);u.g=function(){m(C,W)};return{$:y,M:H,getter:{},setter:{}}});
 
 module.exports = myObj;
+}, {}],
+23: [function(require, module, exports) {
+/*
+Copyright (c) Copyright (c) 2007, Carl S. Yestrau All rights reserved.
+Code licensed under the BSD License: http://www.featureblend.com/license.txt
+Version: 1.0.4
+*/
+var flashdetect = new function(){
+    var self = this;
+    self.installed = false;
+    self.raw = "";
+    self.major = -1;
+    self.minor = -1;
+    self.revision = -1;
+    self.revisionStr = "";
+    var activeXDetectRules = [
+        {
+            "name":"ShockwaveFlash.ShockwaveFlash.7",
+            "version":function(obj){
+                return getActiveXVersion(obj);
+            }
+        },
+        {
+            "name":"ShockwaveFlash.ShockwaveFlash.6",
+            "version":function(obj){
+                var version = "6,0,21";
+                try{
+                    obj.AllowScriptAccess = "always";
+                    version = getActiveXVersion(obj);
+                }catch(err){}
+                return version;
+            }
+        },
+        {
+            "name":"ShockwaveFlash.ShockwaveFlash",
+            "version":function(obj){
+                return getActiveXVersion(obj);
+            }
+        }
+    ];
+    /**
+     * Extract the ActiveX version of the plugin.
+     * 
+     * @param {Object} The flash ActiveX object.
+     * @type String
+     */
+    var getActiveXVersion = function(activeXObj){
+        var version = -1;
+        try{
+            version = activeXObj.GetVariable("$version");
+        }catch(err){}
+        return version;
+    };
+    /**
+     * Try and retrieve an ActiveX object having a specified name.
+     * 
+     * @param {String} name The ActiveX object name lookup.
+     * @return One of ActiveX object or a simple object having an attribute of activeXError with a value of true.
+     * @type Object
+     */
+    var getActiveXObject = function(name){
+        var obj = -1;
+        try{
+            obj = new ActiveXObject(name);
+        }catch(err){
+            obj = {activeXError:true};
+        }
+        return obj;
+    };
+    /**
+     * Parse an ActiveX $version string into an object.
+     * 
+     * @param {String} str The ActiveX Object GetVariable($version) return value. 
+     * @return An object having raw, major, minor, revision and revisionStr attributes.
+     * @type Object
+     */
+    var parseActiveXVersion = function(str){
+        var versionArray = str.split(",");//replace with regex
+        return {
+            "raw":str,
+            "major":parseInt(versionArray[0].split(" ")[1], 10),
+            "minor":parseInt(versionArray[1], 10),
+            "revision":parseInt(versionArray[2], 10),
+            "revisionStr":versionArray[2]
+        };
+    };
+    /**
+     * Parse a standard enabledPlugin.description into an object.
+     * 
+     * @param {String} str The enabledPlugin.description value.
+     * @return An object having raw, major, minor, revision and revisionStr attributes.
+     * @type Object
+     */
+    var parseStandardVersion = function(str){
+        var descParts = str.split(/ +/);
+        var majorMinor = descParts[2].split(/\./);
+        var revisionStr = descParts[3];
+        return {
+            "raw":str,
+            "major":parseInt(majorMinor[0], 10),
+            "minor":parseInt(majorMinor[1], 10), 
+            "revisionStr":revisionStr,
+            "revision":parseRevisionStrToInt(revisionStr)
+        };
+    };
+    /**
+     * Parse the plugin revision string into an integer.
+     * 
+     * @param {String} The revision in string format.
+     * @type Number
+     */
+    var parseRevisionStrToInt = function(str){
+        return parseInt(str.replace(/[a-zA-Z]/g, ""), 10) || self.revision;
+    };
+    /**
+     * Is the major version greater than or equal to a specified version.
+     * 
+     * @param {Number} version The minimum required major version.
+     * @type Boolean
+     */
+    self.majorAtLeast = function(version){
+        return self.major >= version;
+    };
+    /**
+     * Is the minor version greater than or equal to a specified version.
+     * 
+     * @param {Number} version The minimum required minor version.
+     * @type Boolean
+     */
+    self.minorAtLeast = function(version){
+        return self.minor >= version;
+    };
+    /**
+     * Is the revision version greater than or equal to a specified version.
+     * 
+     * @param {Number} version The minimum required revision version.
+     * @type Boolean
+     */
+    self.revisionAtLeast = function(version){
+        return self.revision >= version;
+    };
+    /**
+     * Is the version greater than or equal to a specified major, minor and revision.
+     * 
+     * @param {Number} major The minimum required major version.
+     * @param {Number} (Optional) minor The minimum required minor version.
+     * @param {Number} (Optional) revision The minimum required revision version.
+     * @type Boolean
+     */
+    self.versionAtLeast = function(major){
+        var properties = [self.major, self.minor, self.revision];
+        var len = Math.min(properties.length, arguments.length);
+        for(i=0; i<len; i++){
+            if(properties[i]>=arguments[i]){
+                if(i+1<len && properties[i]==arguments[i]){
+                    continue;
+                }else{
+                    return true;
+                }
+            }else{
+                return false;
+            }
+        }
+    };
+    /**
+     * Constructor, sets raw, major, minor, revisionStr, revision and installed public properties.
+     */
+    self.flashdetect = function(){
+        if(navigator.plugins && navigator.plugins.length>0){
+            var type = 'application/x-shockwave-flash';
+            var mimeTypes = navigator.mimeTypes;
+            if(mimeTypes && mimeTypes[type] && mimeTypes[type].enabledPlugin && mimeTypes[type].enabledPlugin.description){
+                var version = mimeTypes[type].enabledPlugin.description;
+                var versionObj = parseStandardVersion(version);
+                self.raw = versionObj.raw;
+                self.major = versionObj.major;
+                self.minor = versionObj.minor; 
+                self.revisionStr = versionObj.revisionStr;
+                self.revision = versionObj.revision;
+                self.installed = true;
+            }
+        }else if(navigator.appVersion.indexOf("Mac")==-1 && window.execScript){
+            var version = -1;
+            for(var i=0; i<activeXDetectRules.length && version==-1; i++){
+                var obj = getActiveXObject(activeXDetectRules[i].name);
+                if(!obj.activeXError){
+                    self.installed = true;
+                    version = activeXDetectRules[i].version(obj);
+                    if(version!=-1){
+                        var versionObj = parseActiveXVersion(version);
+                        self.raw = versionObj.raw;
+                        self.major = versionObj.major;
+                        self.minor = versionObj.minor; 
+                        self.revision = versionObj.revision;
+                        self.revisionStr = versionObj.revisionStr;
+                    }
+                }
+            }
+        }
+    }();
+};
+flashdetect.JS_RELEASE = "1.0.4";
+
+module.exports = flashdetect;
+
 }, {}]}, {}, {"1":""})
 );
