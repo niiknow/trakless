@@ -10,11 +10,9 @@
   ],
   "dependencies": {
     "avetisk/defaults": "0.0.4",
-    "component/clone": "0.1.0",
     "component/cookie": "1.1.1",
     "component/emitter": "1.1.0",
     "component/querystring": "1.3.0",
-    "component/each": "*",
     "segmentio/store.js": "2.0.0",
     "gjohnson/uuid": "0.0.1",
     "niiknow/webanalyser": "*",
