@@ -92,85 +92,9 @@
 })({
 1: [function(require, module, exports) {
 (function() {
-  (function(window, document) {
-    var $defaultTracker, $pixel, $siteid, attrs, fn, i, j, k, len, len1, prefix, ref, ref1, script, tracker, trakless;
-    tracker = require('./tracker.coffee');
-    $defaultTracker = null;
-    $siteid = 0;
-    $pixel = '/pixel.gif';
-
-    /**
-     * tracker factory
-    #
-     */
-    trakless = (function() {
-      function trakless() {}
-
-
-      /**
-       * set default siteid
-      #
-       * @param {Number} siteid - the site id
-       * @return {Object}
-       */
-
-      trakless.setSiteId = function(siteid) {
-        $siteid = siteid > 0 ? siteid : $siteid;
-      };
-
-
-      /**
-       * set default pixel
-      #
-       * @param {String} pixel - the default pixel url
-       * @return {Object}
-       */
-
-      trakless.setPixel = function(pixelUrl) {
-        $pixel = pixelUrl || $pixel;
-      };
-
-
-      /**
-       * you can provide different siteid and pixelUrl for in multi-tracker and site scenario
-      #
-       * @param {Number} siteid - the siteid
-       * @param {String} pixelUrl - the pixel url
-       * @return {Object}
-       */
-
-      trakless.getTracker = function(siteid, pixelUrl) {
-        var rst;
-        rst = new tracker(siteid, pixelUrl);
-        rst.siteid = siteid || $siteid;
-        rst.pixel = pixelUrl || $pixel;
-        return rst;
-      };
-
-
-      /**
-       * get the default racker
-      #
-       */
-
-      trakless.getDefaultTracker = function() {
-        if ($defaultTracker == null) {
-          $defaultTracker = trakless.getTracker();
-        }
-        return $defaultTracker;
-      };
-
-
-      /**
-       * utility
-      #
-       */
-
-      trakless.util = myutil;
-
-      return trakless;
-
-    })();
+  (function(win) {
+    var attrs, fn, i, j, k, len, len1, prefix, ref, ref1, script, trakless;
+    trakless = require('./trakless.coffee');
     attrs = {
       site: function(value) {
         return trakless.setSiteId(value);
@@ -179,10 +103,10 @@
         if (typeof value !== "string") {
           return;
         }
-        return $pixel = value;
+        return trakless.setPixel(value);
       }
     };
-    ref = document.getElementsByTagName("script");
+    ref = win.document.getElementsByTagName("script");
     for (i = 0, len = ref.length; i < len; i++) {
       script = ref[i];
       if (/trakless/i.test(script.src)) {
@@ -196,14 +120,105 @@
         }
       }
     }
-    window.trakless = trakless;
-    return module.exports = trakless;
-  })(window, document);
+    return win.trakless = trakless;
+  })(window);
 
 }).call(this);
 
-}, {"./tracker.coffee":2}],
+}, {"./trakless.coffee":2}],
 2: [function(require, module, exports) {
+(function() {
+  var $defaultTracker, $pixel, $siteid, tracker, trakless;
+
+  tracker = require('./tracker.coffee');
+
+  $defaultTracker = null;
+
+  $siteid = 0;
+
+  $pixel = '/pixel.gif';
+
+
+  /**
+   * tracker factory
+  #
+   */
+
+  trakless = (function() {
+    function trakless() {}
+
+
+    /**
+    	 * set default siteid
+    	#
+    	 * @param {Number} siteid - the site id
+    	 * @return {Object}
+     */
+
+    trakless.setSiteId = function(siteid) {
+      $siteid = siteid > 0 ? siteid : $siteid;
+    };
+
+
+    /**
+    	 * set default pixel
+    	#
+    	 * @param {String} pixel - the default pixel url
+    	 * @return {Object}
+     */
+
+    trakless.setPixel = function(pixelUrl) {
+      $pixel = pixelUrl || $pixel;
+    };
+
+
+    /**
+    	 * you can provide different siteid and pixelUrl for in multi-tracker and site scenario
+    	#
+    	 * @param {Number} siteid - the siteid
+    	 * @param {String} pixelUrl - the pixel url
+    	 * @return {Object}
+     */
+
+    trakless.getTracker = function(siteid, pixelUrl) {
+      var rst;
+      rst = new tracker(siteid, pixelUrl);
+      rst.siteid = siteid || $siteid;
+      rst.pixel = pixelUrl || $pixel;
+      return rst;
+    };
+
+
+    /**
+    	 * get the default racker
+    	#
+     */
+
+    trakless.getDefaultTracker = function() {
+      if ($defaultTracker == null) {
+        $defaultTracker = trakless.getTracker();
+      }
+      return $defaultTracker;
+    };
+
+
+    /**
+    	 * utility
+    	#
+     */
+
+    trakless.util = myutil;
+
+    return trakless;
+
+  })();
+
+  module.exports = trakless;
+
+}).call(this);
+
+}, {"./tracker.coffee":3}],
+3: [function(require, module, exports) {
 (function() {
   var $defaults, $sessionid, $uuid, Emitter, cookie, defaults, getImage, myutil, query, store, tracker, uuid, webanalyser;
 
@@ -496,8 +511,8 @@
 
 }).call(this);
 
-}, {"defaults":3,"cookie":4,"emitter":5,"querystring":6,"segmentio-store.js":7,"uuid":8,"webanalyser":9,"./myutil.coffee":10}],
-3: [function(require, module, exports) {
+}, {"defaults":4,"cookie":5,"emitter":6,"querystring":7,"segmentio-store.js":8,"uuid":9,"webanalyser":10,"./myutil.coffee":11}],
+4: [function(require, module, exports) {
 'use strict';
 
 /**
@@ -526,7 +541,7 @@ var defaults = function (dest, src, recursive) {
 module.exports = defaults;
 
 }, {}],
-4: [function(require, module, exports) {
+5: [function(require, module, exports) {
 
 /**
  * Module dependencies.
@@ -650,8 +665,8 @@ function decode(value) {
   }
 }
 
-}, {"debug":11}],
-11: [function(require, module, exports) {
+}, {"debug":12}],
+12: [function(require, module, exports) {
 
 /**
  * This is the web browser implementation of `debug()`.
@@ -828,8 +843,8 @@ function localstorage(){
   } catch (e) {}
 }
 
-}, {"./debug":12}],
-12: [function(require, module, exports) {
+}, {"./debug":13}],
+13: [function(require, module, exports) {
 
 /**
  * This is the common logic for both the Node.js and web browser
@@ -1028,8 +1043,8 @@ function coerce(val) {
   return val;
 }
 
-}, {"ms":13}],
-13: [function(require, module, exports) {
+}, {"ms":14}],
+14: [function(require, module, exports) {
 /**
  * Helpers.
  */
@@ -1155,7 +1170,7 @@ function plural(ms, n, name) {
 }
 
 }, {}],
-5: [function(require, module, exports) {
+6: [function(require, module, exports) {
 
 /**
  * Module dependencies.
@@ -1321,8 +1336,8 @@ Emitter.prototype.hasListeners = function(event){
   return !! this.listeners(event).length;
 };
 
-}, {"indexof":14}],
-14: [function(require, module, exports) {
+}, {"indexof":15}],
+15: [function(require, module, exports) {
 module.exports = function(arr, obj){
   if (arr.indexOf) return arr.indexOf(obj);
   for (var i = 0; i < arr.length; ++i) {
@@ -1331,7 +1346,7 @@ module.exports = function(arr, obj){
   return -1;
 };
 }, {}],
-6: [function(require, module, exports) {
+7: [function(require, module, exports) {
 
 /**
  * Module dependencies.
@@ -1406,8 +1421,8 @@ exports.stringify = function(obj){
   return pairs.join('&');
 };
 
-}, {"trim":15,"type":16}],
-15: [function(require, module, exports) {
+}, {"trim":16,"type":17}],
+16: [function(require, module, exports) {
 
 exports = module.exports = trim;
 
@@ -1427,7 +1442,7 @@ exports.right = function(str){
 };
 
 }, {}],
-16: [function(require, module, exports) {
+17: [function(require, module, exports) {
 /**
  * toString ref.
  */
@@ -1464,7 +1479,7 @@ module.exports = function(val){
 };
 
 }, {}],
-7: [function(require, module, exports) {
+8: [function(require, module, exports) {
 var json             = require('json')
   , store            = {}
   , win              = window
@@ -1616,8 +1631,8 @@ try {
 store.enabled = !store.disabled
 
 module.exports = store;
-}, {"json":17}],
-17: [function(require, module, exports) {
+}, {"json":18}],
+18: [function(require, module, exports) {
 
 var json = window.JSON || {};
 var stringify = json.stringify;
@@ -1627,8 +1642,8 @@ module.exports = parse && stringify
   ? JSON
   : require('json-fallback');
 
-}, {"json-fallback":18}],
-18: [function(require, module, exports) {
+}, {"json-fallback":19}],
+19: [function(require, module, exports) {
 /*
     json2.js
     2014-02-04
@@ -2118,7 +2133,7 @@ module.exports = parse && stringify
 }());
 
 }, {}],
-8: [function(require, module, exports) {
+9: [function(require, module, exports) {
 
 /**
  * Taken straight from jed's gist: https://gist.github.com/982883
@@ -2148,7 +2163,7 @@ module.exports = function uuid(a){
       )
 };
 }, {}],
-9: [function(require, module, exports) {
+10: [function(require, module, exports) {
 (function umd(require){
   if ('object' == typeof exports) {
     module.exports = require('1');
@@ -2529,8 +2544,8 @@ module.exports = flashdetect;
 
 }, {}]}, {}, {"1":""})
 );
-}, {"defaults":3,"flashdetect":19}],
-19: [function(require, module, exports) {
+}, {"defaults":4,"flashdetect":20}],
+20: [function(require, module, exports) {
 /*
 Copyright (c) Copyright (c) 2007, Carl S. Yestrau All rights reserved.
 Code licensed under the BSD License: http://www.featureblend.com/license.txt
@@ -2735,207 +2750,200 @@ flashdetect.JS_RELEASE = "1.0.4";
 module.exports = flashdetect;
 
 }, {}],
-10: [function(require, module, exports) {
+11: [function(require, module, exports) {
 (function() {
-  var $trakless2, domevent, myutil, traklessParent;
-
-  domevent = require('domevent');
-
-  $trakless2 = trakless;
-
-
-  /**
-   *  util
-   */
-
-  myutil = (function() {
-    function myutil() {}
-
+  (function(win) {
+    var $trakless2, doc, domevent, myutil, traklessParent;
+    domevent = require('domevent');
+    $trakless2 = trakless;
+    doc = win.document;
 
     /**
-     * allow for getting all attributes
-    #
-     * @param {HTMLElement} el - element
-     * @return {Object}
+     *  util
      */
-
-    myutil.allData = function(el) {
-      var camelCaseName, data, i, k, len, name, ref, v;
-      data = {};
-      ref = el.attributes;
-      for (v = i = 0, len = ref.length; i < len; v = ++i) {
-        k = ref[v];
-        name = /^data-/.replace(attr.name, '');
-        camelCaseName = name.replace(/-(.)/g, function($0, $1) {
-          return $1.toUpperCase();
-        });
-        data[camelCaseName] = attr.value;
-      }
-      return data;
-    };
+    myutil = (function() {
+      function myutil() {}
 
 
-    /**
-     * mini jquery
-    #
-     */
+      /**
+       * allow for getting all attributes
+      #
+       * @param {HTMLElement} el - element
+       * @return {Object}
+       */
 
-    myutil.$ = domevent;
-
-
-    /**
-     * attach to event
-    #
-     * @param {String} ename - event name
-     * @param {Function} cb - callback
-     * @return {Object}
-     */
-
-    myutil.on = function(ename, cb) {
-      domevent(document).on(ename, cb);
-      return this;
-    };
-
-
-    /**
-     * detach event
-    #
-     * @param {String} ename - event name
-     * @param {Function} cb - callback
-     * @return {Object}
-     */
-
-    myutil.off = function(ename, cb) {
-      domevent(document).off(ename, cb);
-      return this;
-    };
-
-
-    /**
-     * trigger event
-    #
-     * @param {String} ename - event name
-     * @param {Object} edata - event data
-     * @return {Object}
-     */
-
-    myutil.trigger = function(ename, edata) {
-      if ($trakless2 && $trakless2.util) {
-        $trakless2.util.$.trigger({
-          type: ename,
-          detail: edata
-        });
-      }
-      return this;
-    };
-
-
-    /**
-     * parse a string to JSON, return string if fail
-    #
-     * @param {String} v - string value
-     * @return {Object}
-     */
-
-    myutil.stringToJSON = function(v) {
-      var v2;
-      if (typeof v === "string") {
-        v2 = domevent.parseJSON(v);
-        if (!(v2 == null)) {
-          return v2;
+      myutil.allData = function(el) {
+        var camelCaseName, data, i, k, len, name, ref, v;
+        data = {};
+        ref = el.attributes;
+        for (v = i = 0, len = ref.length; i < len; v = ++i) {
+          k = ref[v];
+          name = /^data-/.replace(attr.name, '');
+          camelCaseName = name.replace(/-(.)/g, function($0, $1) {
+            return $1.toUpperCase();
+          });
+          data[camelCaseName] = attr.value;
         }
-      }
-      return v;
-    };
+        return data;
+      };
 
 
-    /**
-     * get or set session data - store in cookie
-     * if no value is provided, then it is a get
-    #
-     * @param {String} k - key
-     * @param {Object} v - value
-     * @return {Object}
-     */
+      /**
+       * mini jquery
+      #
+       */
 
-    myutil.session = function(k, v) {
-      if ((v != null)) {
-        if (!(typeof v === "string")) {
-          v = domevent.toJSON(v);
+      myutil.$ = domevent;
+
+
+      /**
+       * attach to event
+      #
+       * @param {String} ename - event name
+       * @param {Function} cb - callback
+       * @return {Object}
+       */
+
+      myutil.on = function(ename, cb) {
+        domevent(doc).on(ename, cb);
+        return this;
+      };
+
+
+      /**
+       * detach event
+      #
+       * @param {String} ename - event name
+       * @param {Function} cb - callback
+       * @return {Object}
+       */
+
+      myutil.off = function(ename, cb) {
+        domevent(doc).off(ename, cb);
+        return this;
+      };
+
+
+      /**
+       * trigger event
+      #
+       * @param {String} ename - event name
+       * @param {Object} edata - event data
+       * @return {Object}
+       */
+
+      myutil.trigger = function(ename, edata) {
+        if ($trakless2 && $trakless2.util) {
+          $trakless2.util.$.trigger({
+            type: ename,
+            detail: edata
+          });
         }
-        cookie('tls:' + k, v, {
-          path: '/'
-        });
+        return this;
+      };
+
+
+      /**
+       * parse a string to JSON, return string if fail
+      #
+       * @param {String} v - string value
+       * @return {Object}
+       */
+
+      myutil.stringToJSON = function(v) {
+        var v2;
+        if (typeof v === "string") {
+          v2 = domevent.parseJSON(v);
+          if (!(v2 == null)) {
+            return v2;
+          }
+        }
         return v;
+      };
+
+
+      /**
+       * get or set session data - store in cookie
+       * if no value is provided, then it is a get
+      #
+       * @param {String} k - key
+       * @param {Object} v - value
+       * @return {Object}
+       */
+
+      myutil.session = function(k, v) {
+        if ((v != null)) {
+          if (!(typeof v === "string")) {
+            v = domevent.toJSON(v);
+          }
+          cookie('tls:' + k, v, {
+            path: '/'
+          });
+          return v;
+        }
+        return this.stringToJSON(cookie('tls:' + k));
+      };
+
+
+      /**
+       * click listener - useful util for click tracking
+      #
+       * @param {String} el - element or parent
+       * @param {Function} handler - function handler
+       * @param {String} monitor - selector/query of child to monitor
+       * @return {Object}
+       */
+
+      myutil.onClick = function(el, handler, monitor) {
+        domevent(el).on('click', handler, monitor);
+        return this;
+      };
+
+
+      /**
+       * document ready
+      #
+       */
+
+      myutil.ready = domevent.ready;
+
+
+      /**
+       * each
+      #
+       */
+
+      myutil.applyDefaults = defaults;
+
+
+      /**
+       * trim
+      #
+       */
+
+      myutil.trim = function(v) {
+        return v.replace(/^\s+|\s+$/gm, '');
+      };
+
+      return myutil;
+
+    })();
+    $trakless2 = trakless;
+    if (win.top !== win) {
+      try {
+        traklessParent = win.top.trakless;
+        $trakless2 = traklessParent;
+      } catch (_error) {
+        $trakless2 = win.parent.trakless;
       }
-      return this.stringToJSON(cookie('tls:' + k));
-    };
-
-
-    /**
-     * click listener - useful util for click tracking
-    #
-     * @param {String} el - element or parent
-     * @param {Function} handler - function handler
-     * @param {String} monitor - selector/query of child to monitor
-     * @return {Object}
-     */
-
-    myutil.onClick = function(el, handler, monitor) {
-      domevent(el).on('click', handler, monitor);
-      return this;
-    };
-
-
-    /**
-     * document ready
-    #
-     */
-
-    myutil.ready = domevent.ready;
-
-
-    /**
-     * each
-    #
-     */
-
-    myutil.applyDefaults = defaults;
-
-
-    /**
-     * trim
-    #
-     */
-
-    myutil.trim = function(v) {
-      return v.replace(/^\s+|\s+$/gm, '');
-    };
-
-    return myutil;
-
-  })();
-
-  if (window.top !== window) {
-    traklessParent = window.parent.trakless;
-  }
-
-  try {
-    traklessParent = window.top.trakless;
-  } catch (_error) {
-
-  }
-
-  if (traklessParent !== trakless) {
-    $trakless2 = traklessParent;
-  }
-
-  module.exports = myutil;
+    }
+    return module.exports = myutil;
+  })(window);
 
 }).call(this);
 
-}, {"domevent":20}],
-20: [function(require, module, exports) {
+}, {"domevent":21}],
+21: [function(require, module, exports) {
 myObj = null
 mydefine = function(h, F){
 	myObj = F().$;

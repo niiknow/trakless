@@ -26,7 +26,7 @@ default: trakless
 
 clean:
 	@rm -rf components $(BUILD)
-	@rm -f pinalytic.js pinalytic.min.js
+	@rm -f trakless.js trakless.min.js
 	@rm -rf node_modules npm-debug.log
 #
 # Test with phantomjs.
@@ -42,7 +42,7 @@ test: $(BUILD)
 test-sauce: $(BUILD)
 	@$(DUOT) saucelabs \
 		--browsers $(BROWSER) \
-		--title pinalytic.js
+		--title trakless.js
 
 #
 # Test in the browser.
