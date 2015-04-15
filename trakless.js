@@ -2920,14 +2920,6 @@ module.exports = flashdetect;
 
 
       /**
-       * each
-      #
-       */
-
-      myutil.applyDefaults = defaults;
-
-
-      /**
        * trim
       #
        */

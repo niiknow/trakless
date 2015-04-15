@@ -118,12 +118,6 @@
     @ready: domevent.ready
 
     ###*
-    # each
-    #
-    ###
-    @applyDefaults: defaults
-
-    ###*
     # trim
     #
     ###
