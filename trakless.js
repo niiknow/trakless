@@ -93,8 +93,18 @@
 1: [function(require, module, exports) {
 (function() {
   (function(win) {
-    var attrs, fn, i, j, k, len, len1, prefix, ref, ref1, script, trakless;
+    var $trakless2, attrs, fn, i, j, k, len, len1, prefix, ref, ref1, script, trakless, traklessParent;
     trakless = require('./trakless.coffee');
+    $trakless2 = trakless;
+    if (win.top !== win) {
+      try {
+        traklessParent = win.top.trakless;
+        $trakless2 = traklessParent;
+      } catch (_error) {
+        $trakless2 = win.parent.trakless;
+      }
+    }
+    trakless.util.trakless2 = $trakless2;
     attrs = {
       site: function(value) {
         return trakless.setSiteId(value);
@@ -2753,9 +2763,8 @@ module.exports = flashdetect;
 11: [function(require, module, exports) {
 (function() {
   (function(win) {
-    var $trakless2, doc, domevent, myutil, traklessParent;
+    var doc, domevent, myutil;
     domevent = require('domevent');
-    $trakless2 = win.trakless;
     doc = win.document;
 
     /**
@@ -2763,6 +2772,8 @@ module.exports = flashdetect;
      */
     myutil = (function() {
       function myutil() {}
+
+      myutil.trakless2 = null;
 
 
       /**
@@ -2833,8 +2844,8 @@ module.exports = flashdetect;
        */
 
       myutil.trigger = function(ename, edata) {
-        if ($trakless2 && $trakless2.util) {
-          $trakless2.util.$.trigger({
+        if (this.trakless2 && this.trakless2.util) {
+          this.trakless2.util.$.trigger({
             type: ename,
             detail: edata
           });
@@ -2928,15 +2939,6 @@ module.exports = flashdetect;
       return myutil;
 
     })();
-    $trakless2 = trakless;
-    if (win.top !== win) {
-      try {
-        traklessParent = win.top.trakless;
-        $trakless2 = traklessParent;
-      } catch (_error) {
-        $trakless2 = win.parent.trakless;
-      }
-    }
     return module.exports = myutil;
   })(window);
 

@@ -1,6 +1,19 @@
 ((win) ->
   trakless = require('./trakless.coffee')
 
+  # initialize $trakless2 to allow event pass to anybody listening on the parent
+  $trakless2 = trakless
+  if win.top != win
+
+    try
+      # this statement throw error if access is denied
+      traklessParent = win.top.trakless
+      $trakless2 = traklessParent
+    catch # swallow any security error
+      $trakless2 = win.parent.trakless
+
+  trakless.util.trakless2 = $trakless2
+
   # auto init based on script attribute
   attrs =
     site: (value) ->

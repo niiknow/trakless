@@ -1,12 +1,13 @@
 ((win) ->
   domevent = require('domevent')
-  $trakless2 = win.trakless
   doc = win.document
+
 
   ###*
   #  util
   ###
   class myutil
+    @trakless2: null
     ###*
     # allow for getting all attributes
     #
@@ -61,8 +62,8 @@
     ####
     @trigger: (ename, edata) ->
       # trigger only if $trakless2 has been initialized
-      if $trakless2 and $trakless2.util
-          $trakless2.util.$.trigger
+      if @trakless2 and @trakless2.util
+          @trakless2.util.$.trigger
             type: ename
             detail: edata
       @
@@ -130,16 +131,6 @@
       return v.replace(/^\s+|\s+$/gm,'')
 
 
-  # initialize $trakless2 to allow event pass to anybody listening on the parent
-  $trakless2 = trakless
-  if win.top != win
-
-    try
-      # this statement throw error if access is denied
-      traklessParent = win.top.trakless
-      $trakless2 = traklessParent
-    catch # swallow any security error
-      $trakless2 = win.parent.trakless
 
   module.exports = myutil
 
