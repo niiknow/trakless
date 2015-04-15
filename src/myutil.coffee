@@ -1,6 +1,6 @@
 ((win) ->
   domevent = require('domevent')
-  $trakless2 = trakless
+  $trakless2 = win.trakless
   doc = win.document
 
   ###*

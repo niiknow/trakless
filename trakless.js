@@ -2755,7 +2755,7 @@ module.exports = flashdetect;
   (function(win) {
     var $trakless2, doc, domevent, myutil, traklessParent;
     domevent = require('domevent');
-    $trakless2 = trakless;
+    $trakless2 = win.trakless;
     doc = win.document;
 
     /**
