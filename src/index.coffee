@@ -1,5 +1,62 @@
 ((win) ->
-  trakless = require('./trakless.coffee')
+  tracker = require('./tracker.coffee')
+  myutil = require('./myutil.coffee')
+  $defaultTracker = null
+  $siteid = 0
+  $pixel = '/pixel.gif'
+
+  ###*
+  # tracker factory
+  #
+  ###
+  class trakless
+    ###*
+    # set default siteid
+    #
+    # @param {Number} siteid - the site id
+    # @return {Object}
+    ###
+    @setSiteId: (siteid) ->
+      $siteid = if siteid > 0 then siteid else $siteid
+      return
+
+    ###*
+    # set default pixel
+    #
+    # @param {String} pixel - the default pixel url
+    # @return {Object}
+    ###
+    @setPixel: (pixelUrl) ->
+      $pixel = pixelUrl or $pixel
+      return
+
+    ###*
+    # you can provide different siteid and pixelUrl for in multi-tracker and site scenario
+    #
+    # @param {Number} siteid - the siteid
+    # @param {String} pixelUrl - the pixel url
+    # @return {Object}
+    ###
+    @getTracker: (siteid, pixelUrl) ->
+      rst = new tracker(siteid, pixelUrl)
+      rst.siteid = siteid or $siteid
+      rst.pixel = pixelUrl or $pixel
+      return rst
+
+    ###*
+    # get the default racker
+    #
+    ###
+    @getDefaultTracker: () ->
+      if (!$defaultTracker?)
+        $defaultTracker = trakless.getTracker()
+      return $defaultTracker
+
+    ###*
+    # utility
+    #
+    ###
+    @util: myutil
 
   # initialize $trakless2 to allow event pass to anybody listening on the parent
   $trakless2 = trakless
@@ -30,4 +87,5 @@
 
   # initialize trakless as global
   win.trakless = trakless
+  module.exports = trakless
 ) window

@@ -93,8 +93,85 @@
 1: [function(require, module, exports) {
 (function() {
   (function(win) {
-    var $trakless2, attrs, fn, i, j, k, len, len1, prefix, ref, ref1, script, trakless, traklessParent;
-    trakless = require('./trakless.coffee');
+    var $defaultTracker, $pixel, $siteid, $trakless2, attrs, fn, i, j, k, len, len1, myutil, prefix, ref, ref1, script, tracker, trakless, traklessParent;
+    tracker = require('./tracker.coffee');
+    myutil = require('./myutil.coffee');
+    $defaultTracker = null;
+    $siteid = 0;
+    $pixel = '/pixel.gif';
+
+    /**
+     * tracker factory
+    #
+     */
+    trakless = (function() {
+      function trakless() {}
+
+
+      /**
+       * set default siteid
+      #
+       * @param {Number} siteid - the site id
+       * @return {Object}
+       */
+
+      trakless.setSiteId = function(siteid) {
+        $siteid = siteid > 0 ? siteid : $siteid;
+      };
+
+
+      /**
+       * set default pixel
+      #
+       * @param {String} pixel - the default pixel url
+       * @return {Object}
+       */
+
+      trakless.setPixel = function(pixelUrl) {
+        $pixel = pixelUrl || $pixel;
+      };
+
+
+      /**
+       * you can provide different siteid and pixelUrl for in multi-tracker and site scenario
+      #
+       * @param {Number} siteid - the siteid
+       * @param {String} pixelUrl - the pixel url
+       * @return {Object}
+       */
+
+      trakless.getTracker = function(siteid, pixelUrl) {
+        var rst;
+        rst = new tracker(siteid, pixelUrl);
+        rst.siteid = siteid || $siteid;
+        rst.pixel = pixelUrl || $pixel;
+        return rst;
+      };
+
+
+      /**
+       * get the default racker
+      #
+       */
+
+      trakless.getDefaultTracker = function() {
+        if ($defaultTracker == null) {
+          $defaultTracker = trakless.getTracker();
+        }
+        return $defaultTracker;
+      };
+
+
+      /**
+       * utility
+      #
+       */
+
+      trakless.util = myutil;
+
+      return trakless;
+
+    })();
     $trakless2 = trakless;
     if (win.top !== win) {
       try {
@@ -130,105 +207,14 @@
         }
       }
     }
-    return win.trakless = trakless;
+    win.trakless = trakless;
+    return module.exports = trakless;
   })(window);
 
 }).call(this);
 
-}, {"./trakless.coffee":2}],
+}, {"./tracker.coffee":2,"./myutil.coffee":3}],
 2: [function(require, module, exports) {
-(function() {
-  var $defaultTracker, $pixel, $siteid, tracker, trakless;
-
-  tracker = require('./tracker.coffee');
-
-  $defaultTracker = null;
-
-  $siteid = 0;
-
-  $pixel = '/pixel.gif';
-
-
-  /**
-   * tracker factory
-  #
-   */
-
-  trakless = (function() {
-    function trakless() {}
-
-
-    /**
-    	 * set default siteid
-    	#
-    	 * @param {Number} siteid - the site id
-    	 * @return {Object}
-     */
-
-    trakless.setSiteId = function(siteid) {
-      $siteid = siteid > 0 ? siteid : $siteid;
-    };
-
-
-    /**
-    	 * set default pixel
-    	#
-    	 * @param {String} pixel - the default pixel url
-    	 * @return {Object}
-     */
-
-    trakless.setPixel = function(pixelUrl) {
-      $pixel = pixelUrl || $pixel;
-    };
-
-
-    /**
-    	 * you can provide different siteid and pixelUrl for in multi-tracker and site scenario
-    	#
-    	 * @param {Number} siteid - the siteid
-    	 * @param {String} pixelUrl - the pixel url
-    	 * @return {Object}
-     */
-
-    trakless.getTracker = function(siteid, pixelUrl) {
-      var rst;
-      rst = new tracker(siteid, pixelUrl);
-      rst.siteid = siteid || $siteid;
-      rst.pixel = pixelUrl || $pixel;
-      return rst;
-    };
-
-
-    /**
-    	 * get the default racker
-    	#
-     */
-
-    trakless.getDefaultTracker = function() {
-      if ($defaultTracker == null) {
-        $defaultTracker = trakless.getTracker();
-      }
-      return $defaultTracker;
-    };
-
-
-    /**
-    	 * utility
-    	#
-     */
-
-    trakless.util = myutil;
-
-    return trakless;
-
-  })();
-
-  module.exports = trakless;
-
-}).call(this);
-
-}, {"./tracker.coffee":3}],
-3: [function(require, module, exports) {
 (function() {
   var $defaults, $sessionid, $uuid, Emitter, cookie, defaults, getImage, myutil, query, store, tracker, uuid, webanalyser;
 
@@ -521,7 +507,7 @@
 
 }).call(this);
 
-}, {"defaults":4,"cookie":5,"emitter":6,"querystring":7,"segmentio-store.js":8,"uuid":9,"webanalyser":10,"./myutil.coffee":11}],
+}, {"defaults":4,"cookie":5,"emitter":6,"querystring":7,"segmentio-store.js":8,"uuid":9,"webanalyser":10,"./myutil.coffee":3}],
 4: [function(require, module, exports) {
 'use strict';
 
@@ -675,8 +661,8 @@ function decode(value) {
   }
 }
 
-}, {"debug":12}],
-12: [function(require, module, exports) {
+}, {"debug":11}],
+11: [function(require, module, exports) {
 
 /**
  * This is the web browser implementation of `debug()`.
@@ -853,8 +839,8 @@ function localstorage(){
   } catch (e) {}
 }
 
-}, {"./debug":13}],
-13: [function(require, module, exports) {
+}, {"./debug":12}],
+12: [function(require, module, exports) {
 
 /**
  * This is the common logic for both the Node.js and web browser
@@ -1053,8 +1039,8 @@ function coerce(val) {
   return val;
 }
 
-}, {"ms":14}],
-14: [function(require, module, exports) {
+}, {"ms":13}],
+13: [function(require, module, exports) {
 /**
  * Helpers.
  */
@@ -1346,8 +1332,8 @@ Emitter.prototype.hasListeners = function(event){
   return !! this.listeners(event).length;
 };
 
-}, {"indexof":15}],
-15: [function(require, module, exports) {
+}, {"indexof":14}],
+14: [function(require, module, exports) {
 module.exports = function(arr, obj){
   if (arr.indexOf) return arr.indexOf(obj);
   for (var i = 0; i < arr.length; ++i) {
@@ -1431,8 +1417,8 @@ exports.stringify = function(obj){
   return pairs.join('&');
 };
 
-}, {"trim":16,"type":17}],
-16: [function(require, module, exports) {
+}, {"trim":15,"type":16}],
+15: [function(require, module, exports) {
 
 exports = module.exports = trim;
 
@@ -1452,7 +1438,7 @@ exports.right = function(str){
 };
 
 }, {}],
-17: [function(require, module, exports) {
+16: [function(require, module, exports) {
 /**
  * toString ref.
  */
@@ -1641,8 +1627,8 @@ try {
 store.enabled = !store.disabled
 
 module.exports = store;
-}, {"json":18}],
-18: [function(require, module, exports) {
+}, {"json":17}],
+17: [function(require, module, exports) {
 
 var json = window.JSON || {};
 var stringify = json.stringify;
@@ -1652,8 +1638,8 @@ module.exports = parse && stringify
   ? JSON
   : require('json-fallback');
 
-}, {"json-fallback":19}],
-19: [function(require, module, exports) {
+}, {"json-fallback":18}],
+18: [function(require, module, exports) {
 /*
     json2.js
     2014-02-04
@@ -2554,8 +2540,8 @@ module.exports = flashdetect;
 
 }, {}]}, {}, {"1":""})
 );
-}, {"defaults":4,"flashdetect":20}],
-20: [function(require, module, exports) {
+}, {"defaults":4,"flashdetect":19}],
+19: [function(require, module, exports) {
 /*
 Copyright (c) Copyright (c) 2007, Carl S. Yestrau All rights reserved.
 Code licensed under the BSD License: http://www.featureblend.com/license.txt
@@ -2760,7 +2746,7 @@ flashdetect.JS_RELEASE = "1.0.4";
 module.exports = flashdetect;
 
 }, {}],
-11: [function(require, module, exports) {
+3: [function(require, module, exports) {
 (function() {
   (function(win) {
     var doc, domevent, myutil;
@@ -2936,8 +2922,8 @@ module.exports = flashdetect;
 
 }).call(this);
 
-}, {"domevent":21}],
-21: [function(require, module, exports) {
+}, {"domevent":20}],
+20: [function(require, module, exports) {
 myObj = null
 mydefine = function(h, F){
 	myObj = F().$;
