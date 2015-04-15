@@ -93,449 +93,11 @@
 1: [function(require, module, exports) {
 (function() {
   (function(window, document) {
-    var $defaultTracker, $defaults, $pixel, $sessionid, $siteid, $trakless2, $uuid, Emitter, attrs, cookie, defaults, domevent, fn, getImage, i, j, k, len, len1, myutil, prefix, query, ref, ref1, script, store, tracker, trakless, traklessParent, uuid, webanalyser;
-    defaults = require('defaults');
-    cookie = require('cookie');
-    Emitter = require('emitter');
-    query = require('querystring');
-    store = require('segmentio-store.js');
-    uuid = require('uuid');
-    webanalyser = require('webanalyser');
-    domevent = require('domevent');
+    var $defaultTracker, $pixel, $siteid, attrs, fn, i, j, k, len, len1, prefix, ref, ref1, script, tracker, trakless;
+    tracker = require('./tracker.coffee');
     $defaultTracker = null;
-    $defaults = null;
     $siteid = 0;
     $pixel = '/pixel.gif';
-    $uuid = store.get('uuid');
-    $sessionid = cookie('pa:usid');
-    $trakless2 = trakless;
-    if ($uuid == null) {
-      $uuid = uuid();
-      store.set('uuid', $uuid);
-    }
-    if ($sessionid == null) {
-      $sessionid = new Date().getTime();
-      cookie('tls:usid', $sessionid, {
-        path: '/'
-      });
-    }
-
-    /*
-               * Send image request to server using GET.
-               * The infamous web bug (or beacon) is a transparent, single pixel (1x1) image
-     */
-    getImage = function(configTrackerUrl, request, callback) {
-      var image;
-      image = new Image(1, 1);
-      image.onload = function() {
-        var iterator;
-        iterator = 0;
-        if (typeof callback === 'function') {
-          callback();
-        }
-      };
-      image.src = configTrackerUrl + (configTrackerUrl.indexOf('?') < 0 ? '?' : '&') + request;
-      return image;
-    };
-
-    /**
-     *  util
-     */
-    myutil = (function() {
-      function myutil() {}
-
-
-      /**
-       * allow for getting all attributes
-      #
-       * @param {HTMLElement} el - element
-       * @return {Object}
-       */
-
-      myutil.allData = function(el) {
-        var camelCaseName, data, i, k, len, name, ref, v;
-        data = {};
-        ref = el.attributes;
-        for (v = i = 0, len = ref.length; i < len; v = ++i) {
-          k = ref[v];
-          name = /^data-/.replace(attr.name, '');
-          camelCaseName = name.replace(/-(.)/g, function($0, $1) {
-            return $1.toUpperCase();
-          });
-          data[camelCaseName] = attr.value;
-        }
-        return data;
-      };
-
-
-      /**
-       * mini jquery
-      #
-       */
-
-      myutil.$ = domevent;
-
-
-      /**
-       * attach to event
-      #
-       * @param {String} ename - event name
-       * @param {Function} cb - callback
-       * @return {Object}
-       */
-
-      myutil.on = function(ename, cb) {
-        domevent(document).on(ename, cb);
-        return this;
-      };
-
-
-      /**
-       * detach event
-      #
-       * @param {String} ename - event name
-       * @param {Function} cb - callback
-       * @return {Object}
-       */
-
-      myutil.off = function(ename, cb) {
-        domevent(document).off(ename, cb);
-        return this;
-      };
-
-
-      /**
-       * trigger event
-      #
-       * @param {String} ename - event name
-       * @param {Object} edata - event data
-       * @return {Object}
-       */
-
-      myutil.trigger = function(ename, edata) {
-        if ($trakless2 && $trakless2.util) {
-          $trakless2.util.$.trigger({
-            type: ename,
-            detail: edata
-          });
-        }
-        return this;
-      };
-
-
-      /**
-       * parse a string to JSON, return string if fail
-      #
-       * @param {String} v - string value
-       * @return {Object}
-       */
-
-      myutil.stringToJSON = function(v) {
-        var v2;
-        if (typeof v === "string") {
-          v2 = domevent.parseJSON(v);
-          if (!(v2 == null)) {
-            return v2;
-          }
-        }
-        return v;
-      };
-
-
-      /**
-       * get or set session data - store in cookie
-       * if no value is provided, then it is a get
-      #
-       * @param {String} k - key
-       * @param {Object} v - value
-       * @return {Object}
-       */
-
-      myutil.session = function(k, v) {
-        if ((v != null)) {
-          if (!(typeof v === "string")) {
-            v = domevent.toJSON(v);
-          }
-          cookie('tls:' + k, v, {
-            path: '/'
-          });
-          return v;
-        }
-        return this.stringToJSON(cookie('tls:' + k));
-      };
-
-
-      /**
-       * click listener - useful util for click tracking
-      #
-       * @param {String} el - element or parent
-       * @param {Function} handler - function handler
-       * @param {String} monitor - selector/query of child to monitor
-       * @return {Object}
-       */
-
-      myutil.onClick = function(el, handler, monitor) {
-        domevent(el).on('click', handler, monitor);
-        return this;
-      };
-
-
-      /**
-       * document ready
-      #
-       */
-
-      myutil.ready = domevent.ready;
-
-
-      /**
-       * each
-      #
-       */
-
-      myutil.applyDefaults = defaults;
-
-
-      /**
-       * trim
-      #
-       */
-
-      myutil.trim = function(v) {
-        return v.replace(/^\s+|\s+$/gm, '');
-      };
-
-      return myutil;
-
-    })();
-
-    /**
-     * tracker class
-    #
-     */
-    tracker = (function() {
-      function tracker() {}
-
-      tracker.prototype.defaults = webanalyser.getResult();
-
-      tracker.prototype.pixel = '/pixel.gif';
-
-      tracker.prototype.siteid = 0;
-
-      tracker.prototype._track = function(ht, extra) {
-        var data, i, k, len, myData, myDef, pixel, v;
-        if (extra == null) {
-          extra = {};
-        }
-        if (this.siteid > 0) {
-          pixel = myutil.trim(this.pixel);
-          myDef = this.defaults;
-          if ((pixel.indexOf('//') === 0) && (myDef.dl.indexOf('http') !== 0)) {
-            pixel = 'http:' + pixel;
-          }
-          data = ht === 'pageview' ? defaults(extra, myDef) : extra;
-          myData = {};
-          for (v = i = 0, len = data.length; i < len; v = ++i) {
-            k = data[v];
-            if (v != null) {
-              if (!(typeof v === "string") || (myutil.trim(v).length > 0)) {
-                myData[k] = v;
-              }
-            }
-          }
-          myData.z = new Date().getTime();
-          myData.ht = ht;
-          myData.uuid = $uuid;
-          myData.siteid = this.siteid;
-          myData.usid = $sessionid;
-          getImage(pixel, query.stringify(myData));
-          this.emit('track', ht, data);
-        }
-        return this;
-      };
-
-
-      /**
-       * track generic method
-      #
-       * @param {String} ht - hit types with possible values of 'pageview', 'event', 'transaction', 'item', 'social', 'exception', 'timing', 'app', 'custom'
-       * @param {Object} extra - extended data
-       * @return {Object}
-       */
-
-      tracker.prototype.track = function(ht, extra) {
-        var self;
-        self = this;
-        domevent.ready(function() {
-          return self._track(ht || 'custom', extra);
-        });
-        return this;
-      };
-
-
-      /**
-       * track pageview
-      #
-       * @param {Object} extra - extended data
-       * @return {Object}
-       */
-
-      tracker.prototype.trackPageView = function(extra) {
-        return this.track('pageview', extra);
-      };
-
-
-      /**
-       * track event
-      #
-       * @param {String} category
-       * @param {String} action
-       * @param {String} label
-       * @param {String} value - Values must be non-negative.
-       * @return {Object}
-       */
-
-      tracker.prototype.trackEvent = function(category, action, label, value) {
-        if (value && value < 0) {
-          value = null;
-        }
-        return this.track('event', {
-          ec: category || 'event',
-          ea: action,
-          el: label,
-          ev: value
-        });
-      };
-
-
-      /**
-       * track item
-      #
-       * @param {String} id - *required* [OD564]
-       * @param {Number} name - *required* [Shoe] Specifies the item name.
-       * @param {Number} price [3.50] Specifies the price for a single item / unit.
-       * @param {Number} quantity [4] Specifies the number of items purchased.
-       * @param {String} code [SKU47] Specifies the SKU or item code.
-       * @param {String} category [Blue] Specifies the category that the item belongs to.
-       * @param {String} currencycode [EUR] When present indicates the local currency for all transaction currency values. Value should be a valid ISO 4217 currency code.
-       * @return {Object}
-       */
-
-      tracker.prototype.trackItemOrTransaction = function(id, name, price, quantity, code, category, currencycode) {
-        return this.track('item', {
-          ti: id,
-          "in": name,
-          ip: price,
-          iq: quantity,
-          ic: code,
-          iv: category,
-          cu: currencycode
-        });
-      };
-
-
-      /**
-       * track transaction
-      #
-       * @param {String} id - *required* [OD564]
-       * @param {String} affiliation [Member] Specifies the affiliation or store name.
-       * @param {Number} revenue [15.47] Specifies the total revenue associated with the transaction. This value should include any shipping or tax costs.
-       * @param {Number} shipping [3.50] Specifies the total shipping cost of the transaction.
-       * @param {Number} tax [1.20] Specifies the total tax of the transaction.
-       * @param {Number} price [3.50] Specifies the price for a single item / unit.
-       * @param {Number} quantity [4] Specifies the number of items purchased.
-       * @param {String} code [SKU47] Specifies the SKU or item code.
-       * @param {String} category [Blue] Specifies the category that the item belongs to.
-       * @param {String} currencycode [EUR] When present indicates the local currency for all transaction currency values. Value should be a valid ISO 4217 currency code.
-       * @return {Object}
-       */
-
-      tracker.prototype.trackTransaction = function(id, affiliation, revenue, shipping, tax, name, price, quantity, code, category, currencycode) {
-        return this.track('transaction', {
-          ti: id,
-          ta: affiliation,
-          tr: revenue,
-          ts: shipping,
-          tt: tax,
-          "in": name,
-          ip: price,
-          iq: quantity,
-          ic: code,
-          iv: category,
-          cu: currencycode
-        });
-      };
-
-
-      /**
-       * track social
-      #
-       * @param {String} network - *required* [facebook] Specifies the social network, for example Facebook or Google Plus.
-       * @param {String} action - *required* [like] Specifies the social interaction action. For example on Google Plus when a user clicks the +1 button, the social action is 'plus'.
-       * @param {String} target - *required* [http://foo.com] Specifies the target of a social interaction. This value is typically a URL but can be any text.
-       * @return {Object}
-       */
-
-      tracker.prototype.trackSocial = function(network, action, target) {
-        return this.track('social', {
-          sn: network,
-          sa: action,
-          st: target
-        });
-      };
-
-
-      /**
-       * track exception
-      #
-       * @param {String} description - Specifies the description of an exception.
-       * @param {String} isFatal - true/false Specifies whether the exception was fatal.
-       * @return {Object}
-       */
-
-      tracker.prototype.trackException = function(description, isFatal) {
-        return this.track('exception', {
-          exf: isFatal ? 1 : 0,
-          exd: description
-        });
-      };
-
-
-      /**
-       * track app
-      #
-       * @param {String} name - *required* [MyApp] Specifies the application name.
-       * @param {String} id - *required* [com.company.app] Application identifier.
-       * @param {String} version - *required* [1.2] Specifies the application version.
-       * @param {String} installerid - *required* com.platform.vending
-       * @return {Object}
-       */
-
-      tracker.prototype.trackApp = function(name, id, version, installerid) {
-        return this.track('app', {
-          an: name,
-          aid: id,
-          av: version,
-          aiid: installer
-        });
-      };
-
-
-      /**
-       * track custom
-      #
-       * @param {Object} customDataObject - object with any property you want
-       * @return {Object}
-       */
-
-      tracker.prototype.trackCustom = function(customDataObject) {
-        return this.track('custom', customDataObject);
-      };
-
-      return tracker;
-
-    })();
-    Emitter(tracker.prototype);
 
     /**
      * tracker factory
@@ -609,17 +171,6 @@
       return trakless;
 
     })();
-    if (window.top !== window) {
-      traklessParent = window.parent.trakless;
-      try {
-        traklessParent = window.top.trakless;
-      } catch (_error) {
-
-      }
-      if (traklessParent !== trakless) {
-        $trakless2 = traklessParent;
-      }
-    }
     attrs = {
       site: function(value) {
         return trakless.setSiteId(value);
@@ -651,8 +202,302 @@
 
 }).call(this);
 
-}, {"defaults":2,"cookie":3,"emitter":4,"querystring":5,"segmentio-store.js":6,"uuid":7,"webanalyser":8,"domevent":9}],
+}, {"./tracker.coffee":2}],
 2: [function(require, module, exports) {
+(function() {
+  var $defaults, $sessionid, $uuid, Emitter, cookie, defaults, getImage, myutil, query, store, tracker, uuid, webanalyser;
+
+  defaults = require('defaults');
+
+  cookie = require('cookie');
+
+  Emitter = require('emitter');
+
+  query = require('querystring');
+
+  store = require('segmentio-store.js');
+
+  uuid = require('uuid');
+
+  webanalyser = require('webanalyser');
+
+  myutil = require('./myutil.coffee');
+
+  $defaults = null;
+
+  $uuid = store.get('uuid');
+
+  $sessionid = cookie('pa:usid');
+
+  if ($uuid == null) {
+    $uuid = uuid();
+    store.set('uuid', $uuid);
+  }
+
+  if ($sessionid == null) {
+    $sessionid = new Date().getTime();
+    cookie('tls:usid', $sessionid, {
+      path: '/'
+    });
+  }
+
+
+  /*
+           * Send image request to server using GET.
+           * The infamous web bug (or beacon) is a transparent, single pixel (1x1) image
+   */
+
+  getImage = function(cfgUrl, request, callback) {
+    var image;
+    image = new Image(1, 1);
+    image.onload = function() {
+      var iterator;
+      iterator = 0;
+      if (typeof callback === 'function') {
+        callback();
+      }
+    };
+    image.src = cfgUrl + (cfgUrl.indexOf('?') < 0 ? '?' : '&') + request;
+    return image;
+  };
+
+
+  /**
+   * tracker class
+  #
+   */
+
+  tracker = (function() {
+    function tracker() {}
+
+    tracker.prototype.defaults = webanalyser.getResult();
+
+    tracker.prototype.pixel = '/pixel.gif';
+
+    tracker.prototype.siteid = 0;
+
+    tracker.prototype._track = function(ht, extra) {
+      var data, i, k, len, myData, myDef, pixel, v;
+      if (extra == null) {
+        extra = {};
+      }
+      if (this.siteid > 0) {
+        pixel = myutil.trim(this.pixel);
+        myDef = this.defaults;
+        if ((pixel.indexOf('//') === 0) && (myDef.dl.indexOf('http') !== 0)) {
+          pixel = 'http:' + pixel;
+        }
+        data = ht === 'pageview' ? defaults(extra, myDef) : extra;
+        myData = {};
+        for (v = i = 0, len = data.length; i < len; v = ++i) {
+          k = data[v];
+          if (v != null) {
+            if (!(typeof v === "string") || (myutil.trim(v).length > 0)) {
+              myData[k] = v;
+            }
+          }
+        }
+        myData.z = new Date().getTime();
+        myData.ht = ht;
+        myData.uuid = $uuid;
+        myData.siteid = this.siteid;
+        myData.usid = $sessionid;
+        getImage(pixel, query.stringify(myData));
+        this.emit('track', ht, data);
+      }
+      return this;
+    };
+
+
+    /**
+    	 * track generic method
+    	#
+    	 * @param {String} ht - hit types with possible values of 'pageview', 'event', 'transaction', 'item', 'social', 'exception', 'timing', 'app', 'custom'
+    	 * @param {Object} extra - extended data
+    	 * @return {Object}
+     */
+
+    tracker.prototype.track = function(ht, extra) {
+      var self;
+      self = this;
+      myutil.ready(function() {
+        return self._track(ht || 'custom', extra);
+      });
+      return this;
+    };
+
+
+    /**
+    	 * track pageview
+    	#
+    	 * @param {Object} extra - extended data
+    	 * @return {Object}
+     */
+
+    tracker.prototype.trackPageView = function(extra) {
+      return this.track('pageview', extra);
+    };
+
+
+    /**
+    	 * track event
+    	#
+    	 * @param {String} category
+    	 * @param {String} action
+    	 * @param {String} label
+    	 * @param {String} value - Values must be non-negative.
+    	 * @return {Object}
+     */
+
+    tracker.prototype.trackEvent = function(category, action, label, value) {
+      if (value && value < 0) {
+        value = null;
+      }
+      return this.track('event', {
+        ec: category || 'event',
+        ea: action,
+        el: label,
+        ev: value
+      });
+    };
+
+
+    /**
+    	 * track item
+    	#
+    	 * @param {String} id - *required* [OD564]
+    	 * @param {Number} name - *required* [Shoe] Specifies the item name.
+    	 * @param {Number} price [3.50] Specifies the price for a single item / unit.
+    	 * @param {Number} quantity [4] Specifies the number of items purchased.
+    	 * @param {String} code [SKU47] Specifies the SKU or item code.
+    	 * @param {String} category [Blue] Specifies the category that the item belongs to.
+    	 * @param {String} currencycode [EUR] When present indicates the local currency for all transaction currency values. Value should be a valid ISO 4217 currency code.
+    	 * @return {Object}
+     */
+
+    tracker.prototype.trackItemOrTransaction = function(id, name, price, quantity, code, category, currencycode) {
+      return this.track('item', {
+        ti: id,
+        "in": name,
+        ip: price,
+        iq: quantity,
+        ic: code,
+        iv: category,
+        cu: currencycode
+      });
+    };
+
+
+    /**
+    	 * track transaction
+    	#
+    	 * @param {String} id - *required* [OD564]
+    	 * @param {String} affiliation [Member] Specifies the affiliation or store name.
+    	 * @param {Number} revenue [15.47] Specifies the total revenue associated with the transaction. This value should include any shipping or tax costs.
+    	 * @param {Number} shipping [3.50] Specifies the total shipping cost of the transaction.
+    	 * @param {Number} tax [1.20] Specifies the total tax of the transaction.
+    	 * @param {Number} price [3.50] Specifies the price for a single item / unit.
+    	 * @param {Number} quantity [4] Specifies the number of items purchased.
+    	 * @param {String} code [SKU47] Specifies the SKU or item code.
+    	 * @param {String} category [Blue] Specifies the category that the item belongs to.
+    	 * @param {String} currencycode [EUR] When present indicates the local currency for all transaction currency values. Value should be a valid ISO 4217 currency code.
+    	 * @return {Object}
+     */
+
+    tracker.prototype.trackTransaction = function(id, affiliation, revenue, shipping, tax, name, price, quantity, code, category, currencycode) {
+      return this.track('transaction', {
+        ti: id,
+        ta: affiliation,
+        tr: revenue,
+        ts: shipping,
+        tt: tax,
+        "in": name,
+        ip: price,
+        iq: quantity,
+        ic: code,
+        iv: category,
+        cu: currencycode
+      });
+    };
+
+
+    /**
+    	 * track social
+    	#
+    	 * @param {String} network - *required* [facebook] Specifies the social network, for example Facebook or Google Plus.
+    	 * @param {String} action - *required* [like] Specifies the social interaction action. For example on Google Plus when a user clicks the +1 button, the social action is 'plus'.
+    	 * @param {String} target - *required* [http://foo.com] Specifies the target of a social interaction. This value is typically a URL but can be any text.
+    	 * @return {Object}
+     */
+
+    tracker.prototype.trackSocial = function(network, action, target) {
+      return this.track('social', {
+        sn: network,
+        sa: action,
+        st: target
+      });
+    };
+
+
+    /**
+    	 * track exception
+    	#
+    	 * @param {String} description - Specifies the description of an exception.
+    	 * @param {String} isFatal - true/false Specifies whether the exception was fatal.
+    	 * @return {Object}
+     */
+
+    tracker.prototype.trackException = function(description, isFatal) {
+      return this.track('exception', {
+        exf: isFatal ? 1 : 0,
+        exd: description
+      });
+    };
+
+
+    /**
+    	 * track app
+    	#
+    	 * @param {String} name - *required* [MyApp] Specifies the application name.
+    	 * @param {String} id - *required* [com.company.app] Application identifier.
+    	 * @param {String} version - *required* [1.2] Specifies the application version.
+    	 * @param {String} installerid - *required* com.platform.vending
+    	 * @return {Object}
+     */
+
+    tracker.prototype.trackApp = function(name, id, version, installerid) {
+      return this.track('app', {
+        an: name,
+        aid: id,
+        av: version,
+        aiid: installer
+      });
+    };
+
+
+    /**
+    	 * track custom
+    	#
+    	 * @param {Object} customDataObject - object with any property you want
+    	 * @return {Object}
+     */
+
+    tracker.prototype.trackCustom = function(customDataObject) {
+      return this.track('custom', customDataObject);
+    };
+
+    return tracker;
+
+  })();
+
+  Emitter(tracker.prototype);
+
+  module.exports = tracker;
+
+}).call(this);
+
+}, {"defaults":3,"cookie":4,"emitter":5,"querystring":6,"segmentio-store.js":7,"uuid":8,"webanalyser":9,"./myutil.coffee":10}],
+3: [function(require, module, exports) {
 'use strict';
 
 /**
@@ -681,7 +526,7 @@ var defaults = function (dest, src, recursive) {
 module.exports = defaults;
 
 }, {}],
-3: [function(require, module, exports) {
+4: [function(require, module, exports) {
 
 /**
  * Module dependencies.
@@ -805,8 +650,8 @@ function decode(value) {
   }
 }
 
-}, {"debug":10}],
-10: [function(require, module, exports) {
+}, {"debug":11}],
+11: [function(require, module, exports) {
 
 /**
  * This is the web browser implementation of `debug()`.
@@ -983,8 +828,8 @@ function localstorage(){
   } catch (e) {}
 }
 
-}, {"./debug":11}],
-11: [function(require, module, exports) {
+}, {"./debug":12}],
+12: [function(require, module, exports) {
 
 /**
  * This is the common logic for both the Node.js and web browser
@@ -1183,8 +1028,8 @@ function coerce(val) {
   return val;
 }
 
-}, {"ms":12}],
-12: [function(require, module, exports) {
+}, {"ms":13}],
+13: [function(require, module, exports) {
 /**
  * Helpers.
  */
@@ -1310,7 +1155,7 @@ function plural(ms, n, name) {
 }
 
 }, {}],
-4: [function(require, module, exports) {
+5: [function(require, module, exports) {
 
 /**
  * Module dependencies.
@@ -1476,8 +1321,8 @@ Emitter.prototype.hasListeners = function(event){
   return !! this.listeners(event).length;
 };
 
-}, {"indexof":13}],
-13: [function(require, module, exports) {
+}, {"indexof":14}],
+14: [function(require, module, exports) {
 module.exports = function(arr, obj){
   if (arr.indexOf) return arr.indexOf(obj);
   for (var i = 0; i < arr.length; ++i) {
@@ -1486,7 +1331,7 @@ module.exports = function(arr, obj){
   return -1;
 };
 }, {}],
-5: [function(require, module, exports) {
+6: [function(require, module, exports) {
 
 /**
  * Module dependencies.
@@ -1561,8 +1406,8 @@ exports.stringify = function(obj){
   return pairs.join('&');
 };
 
-}, {"trim":14,"type":15}],
-14: [function(require, module, exports) {
+}, {"trim":15,"type":16}],
+15: [function(require, module, exports) {
 
 exports = module.exports = trim;
 
@@ -1582,7 +1427,7 @@ exports.right = function(str){
 };
 
 }, {}],
-15: [function(require, module, exports) {
+16: [function(require, module, exports) {
 /**
  * toString ref.
  */
@@ -1619,7 +1464,7 @@ module.exports = function(val){
 };
 
 }, {}],
-6: [function(require, module, exports) {
+7: [function(require, module, exports) {
 var json             = require('json')
   , store            = {}
   , win              = window
@@ -1771,8 +1616,8 @@ try {
 store.enabled = !store.disabled
 
 module.exports = store;
-}, {"json":16}],
-16: [function(require, module, exports) {
+}, {"json":17}],
+17: [function(require, module, exports) {
 
 var json = window.JSON || {};
 var stringify = json.stringify;
@@ -1782,8 +1627,8 @@ module.exports = parse && stringify
   ? JSON
   : require('json-fallback');
 
-}, {"json-fallback":17}],
-17: [function(require, module, exports) {
+}, {"json-fallback":18}],
+18: [function(require, module, exports) {
 /*
     json2.js
     2014-02-04
@@ -2273,7 +2118,7 @@ module.exports = parse && stringify
 }());
 
 }, {}],
-7: [function(require, module, exports) {
+8: [function(require, module, exports) {
 
 /**
  * Taken straight from jed's gist: https://gist.github.com/982883
@@ -2303,7 +2148,7 @@ module.exports = function uuid(a){
       )
 };
 }, {}],
-8: [function(require, module, exports) {
+9: [function(require, module, exports) {
 (function umd(require){
   if ('object' == typeof exports) {
     module.exports = require('1');
@@ -2684,8 +2529,8 @@ module.exports = flashdetect;
 
 }, {}]}, {}, {"1":""})
 );
-}, {"defaults":2,"flashdetect":18}],
-18: [function(require, module, exports) {
+}, {"defaults":3,"flashdetect":19}],
+19: [function(require, module, exports) {
 /*
 Copyright (c) Copyright (c) 2007, Carl S. Yestrau All rights reserved.
 Code licensed under the BSD License: http://www.featureblend.com/license.txt
@@ -2890,7 +2735,207 @@ flashdetect.JS_RELEASE = "1.0.4";
 module.exports = flashdetect;
 
 }, {}],
-9: [function(require, module, exports) {
+10: [function(require, module, exports) {
+(function() {
+  var $trakless2, domevent, myutil, traklessParent;
+
+  domevent = require('domevent');
+
+  $trakless2 = trakless;
+
+
+  /**
+   *  util
+   */
+
+  myutil = (function() {
+    function myutil() {}
+
+
+    /**
+     * allow for getting all attributes
+    #
+     * @param {HTMLElement} el - element
+     * @return {Object}
+     */
+
+    myutil.allData = function(el) {
+      var camelCaseName, data, i, k, len, name, ref, v;
+      data = {};
+      ref = el.attributes;
+      for (v = i = 0, len = ref.length; i < len; v = ++i) {
+        k = ref[v];
+        name = /^data-/.replace(attr.name, '');
+        camelCaseName = name.replace(/-(.)/g, function($0, $1) {
+          return $1.toUpperCase();
+        });
+        data[camelCaseName] = attr.value;
+      }
+      return data;
+    };
+
+
+    /**
+     * mini jquery
+    #
+     */
+
+    myutil.$ = domevent;
+
+
+    /**
+     * attach to event
+    #
+     * @param {String} ename - event name
+     * @param {Function} cb - callback
+     * @return {Object}
+     */
+
+    myutil.on = function(ename, cb) {
+      domevent(document).on(ename, cb);
+      return this;
+    };
+
+
+    /**
+     * detach event
+    #
+     * @param {String} ename - event name
+     * @param {Function} cb - callback
+     * @return {Object}
+     */
+
+    myutil.off = function(ename, cb) {
+      domevent(document).off(ename, cb);
+      return this;
+    };
+
+
+    /**
+     * trigger event
+    #
+     * @param {String} ename - event name
+     * @param {Object} edata - event data
+     * @return {Object}
+     */
+
+    myutil.trigger = function(ename, edata) {
+      if ($trakless2 && $trakless2.util) {
+        $trakless2.util.$.trigger({
+          type: ename,
+          detail: edata
+        });
+      }
+      return this;
+    };
+
+
+    /**
+     * parse a string to JSON, return string if fail
+    #
+     * @param {String} v - string value
+     * @return {Object}
+     */
+
+    myutil.stringToJSON = function(v) {
+      var v2;
+      if (typeof v === "string") {
+        v2 = domevent.parseJSON(v);
+        if (!(v2 == null)) {
+          return v2;
+        }
+      }
+      return v;
+    };
+
+
+    /**
+     * get or set session data - store in cookie
+     * if no value is provided, then it is a get
+    #
+     * @param {String} k - key
+     * @param {Object} v - value
+     * @return {Object}
+     */
+
+    myutil.session = function(k, v) {
+      if ((v != null)) {
+        if (!(typeof v === "string")) {
+          v = domevent.toJSON(v);
+        }
+        cookie('tls:' + k, v, {
+          path: '/'
+        });
+        return v;
+      }
+      return this.stringToJSON(cookie('tls:' + k));
+    };
+
+
+    /**
+     * click listener - useful util for click tracking
+    #
+     * @param {String} el - element or parent
+     * @param {Function} handler - function handler
+     * @param {String} monitor - selector/query of child to monitor
+     * @return {Object}
+     */
+
+    myutil.onClick = function(el, handler, monitor) {
+      domevent(el).on('click', handler, monitor);
+      return this;
+    };
+
+
+    /**
+     * document ready
+    #
+     */
+
+    myutil.ready = domevent.ready;
+
+
+    /**
+     * each
+    #
+     */
+
+    myutil.applyDefaults = defaults;
+
+
+    /**
+     * trim
+    #
+     */
+
+    myutil.trim = function(v) {
+      return v.replace(/^\s+|\s+$/gm, '');
+    };
+
+    return myutil;
+
+  })();
+
+  if (window.top !== window) {
+    traklessParent = window.parent.trakless;
+  }
+
+  try {
+    traklessParent = window.top.trakless;
+  } catch (_error) {
+
+  }
+
+  if (traklessParent !== trakless) {
+    $trakless2 = traklessParent;
+  }
+
+  module.exports = myutil;
+
+}).call(this);
+
+}, {"domevent":20}],
+20: [function(require, module, exports) {
 myObj = null
 mydefine = function(h, F){
 	myObj = F().$;
