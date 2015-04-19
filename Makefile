@@ -68,7 +68,7 @@ test-browser: $(BUILD)
 #
 
 trakless: node_modules $(SRC)
-	@$(DUO) --standalone trakless --use duo-coffee src/index.coffee > trakless.js
+	@$(DUO) --use duo-coffee src/index.coffee > trakless.js
 	@$(MINIFY) trakless.js --output trakless.min.js
 
 #

@@ -1,6 +1,8 @@
 ((win) ->
   tracker = require('./tracker.coffee')
   myutil = require('./myutil.coffee')
+  xstore = require('xstore')
+
   $defaultTracker = null
   $siteid = 0
   $pixel = '/pixel.gif'
@@ -31,6 +33,13 @@
       return
 
     ###*
+    # the storage
+    #
+    # @return {Object}
+    ###
+    @store: xstore
+
+    ###*
     # you can provide different siteid and pixelUrl for in multi-tracker and site scenario
     #
     # @param {Number} siteid - the siteid
@@ -41,6 +50,7 @@
       rst = new tracker(siteid, pixelUrl)
       rst.siteid = siteid or $siteid
       rst.pixel = pixelUrl or $pixel
+      rst.store = xstore
       return rst
 
     ###*
