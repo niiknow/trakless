@@ -124,8 +124,5 @@
     @trim: (v) ->
       return v.replace(/^\s+|\s+$/gm,'')
 
-
-
   module.exports = myutil
-
 ) window

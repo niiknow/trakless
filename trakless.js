@@ -84,135 +84,150 @@
 })({
 1: [function(require, module, exports) {
 (function() {
-  (function(win) {
-    var $defaultTracker, $pixel, $siteid, $trakless2, attrs, fn, i, j, k, len, len1, myutil, prefix, ref, ref1, script, tracker, trakless, traklessParent, xstore;
-    tracker = require('./tracker.coffee');
-    myutil = require('./myutil.coffee');
-    xstore = require('xstore');
-    $defaultTracker = null;
-    $siteid = 0;
-    $pixel = '/pixel.gif';
+  var $defaultTracker, $pixel, $siteid, $trakless2, attrs, fn, i, j, k, len, len1, myutil, prefix, ref, ref1, script, tracker, trakless, traklessParent, win, xstore;
+
+  win = window;
+
+  tracker = require('./tracker.coffee');
+
+  myutil = require('./myutil.coffee');
+
+  xstore = require('xstore');
+
+  $defaultTracker = null;
+
+  $siteid = 0;
+
+  $pixel = '/pixel.gif';
+
+
+  /**
+   * tracker factory
+  #
+   */
+
+  trakless = (function() {
+    function trakless() {}
+
 
     /**
-     * tracker factory
+     * set default siteid
+    #
+     * @param {Number} siteid - the site id
+     * @return {Object}
+     */
+
+    trakless.setSiteId = function(siteid) {
+      $siteid = siteid > 0 ? siteid : $siteid;
+    };
+
+
+    /**
+     * set default pixel
+    #
+     * @param {String} pixel - the default pixel url
+     * @return {Object}
+     */
+
+    trakless.setPixel = function(pixelUrl) {
+      $pixel = pixelUrl || $pixel;
+    };
+
+
+    /**
+     * the storage
+    #
+     * @return {Object}
+     */
+
+    trakless.store = xstore;
+
+
+    /**
+     * you can provide different siteid and pixelUrl for in multi-tracker and site scenario
+    #
+     * @param {Number} siteid - the siteid
+     * @param {String} pixelUrl - the pixel url
+     * @return {Object}
+     */
+
+    trakless.getTracker = function(siteid, pixelUrl) {
+      var rst;
+      rst = new tracker(siteid, pixelUrl);
+      rst.siteid = siteid || $siteid;
+      rst.pixel = pixelUrl || $pixel;
+      rst.store = xstore;
+      return rst;
+    };
+
+
+    /**
+     * get the default racker
     #
      */
-    trakless = (function() {
-      function trakless() {}
 
-
-      /**
-       * set default siteid
-      #
-       * @param {Number} siteid - the site id
-       * @return {Object}
-       */
-
-      trakless.setSiteId = function(siteid) {
-        $siteid = siteid > 0 ? siteid : $siteid;
-      };
-
-
-      /**
-       * set default pixel
-      #
-       * @param {String} pixel - the default pixel url
-       * @return {Object}
-       */
-
-      trakless.setPixel = function(pixelUrl) {
-        $pixel = pixelUrl || $pixel;
-      };
-
-
-      /**
-       * the storage
-      #
-       * @return {Object}
-       */
-
-      trakless.store = xstore;
-
-
-      /**
-       * you can provide different siteid and pixelUrl for in multi-tracker and site scenario
-      #
-       * @param {Number} siteid - the siteid
-       * @param {String} pixelUrl - the pixel url
-       * @return {Object}
-       */
-
-      trakless.getTracker = function(siteid, pixelUrl) {
-        var rst;
-        rst = new tracker(siteid, pixelUrl);
-        rst.siteid = siteid || $siteid;
-        rst.pixel = pixelUrl || $pixel;
-        rst.store = xstore;
-        return rst;
-      };
-
-
-      /**
-       * get the default racker
-      #
-       */
-
-      trakless.getDefaultTracker = function() {
-        if ($defaultTracker == null) {
-          $defaultTracker = trakless.getTracker();
-        }
-        return $defaultTracker;
-      };
-
-
-      /**
-       * utility
-      #
-       */
-
-      trakless.util = myutil;
-
-      return trakless;
-
-    })();
-    $trakless2 = trakless;
-    if (win.top !== win) {
-      try {
-        traklessParent = win.top.trakless;
-        $trakless2 = traklessParent;
-      } catch (_error) {
-        $trakless2 = win.parent.trakless;
+    trakless.getDefaultTracker = function() {
+      if ($defaultTracker == null) {
+        $defaultTracker = trakless.getTracker();
       }
-    }
-    trakless.util.trakless2 = $trakless2;
-    attrs = {
-      site: function(value) {
-        return trakless.setSiteId(value);
-      },
-      pixel: function(value) {
-        if (typeof value !== "string") {
-          return;
-        }
-        return trakless.setPixel(value);
-      }
+      return $defaultTracker;
     };
-    ref = win.document.getElementsByTagName("script");
-    for (i = 0, len = ref.length; i < len; i++) {
-      script = ref[i];
-      if (/trakless/i.test(script.src)) {
-        ref1 = ['', 'data-'];
-        for (j = 0, len1 = ref1.length; j < len1; j++) {
-          prefix = ref1[j];
-          for (k in attrs) {
-            fn = attrs[k];
-            fn(script.getAttribute(prefix + k));
-          }
+
+
+    /**
+     * utility
+    #
+     */
+
+    trakless.util = myutil;
+
+    return trakless;
+
+  })();
+
+  $trakless2 = trakless;
+
+  if (win.top !== win) {
+    try {
+      traklessParent = win.top.trakless;
+      $trakless2 = traklessParent;
+    } catch (_error) {
+      $trakless2 = win.parent.trakless;
+    }
+  }
+
+  trakless.util.trakless2 = $trakless2;
+
+  attrs = {
+    site: function(value) {
+      return trakless.setSiteId(value);
+    },
+    pixel: function(value) {
+      if (typeof value !== "string") {
+        return;
+      }
+      return trakless.setPixel(value);
+    }
+  };
+
+  ref = win.document.getElementsByTagName("script");
+  for (i = 0, len = ref.length; i < len; i++) {
+    script = ref[i];
+    if (/trakless/i.test(script.src)) {
+      ref1 = ['', 'data-'];
+      for (j = 0, len1 = ref1.length; j < len1; j++) {
+        prefix = ref1[j];
+        for (k in attrs) {
+          fn = attrs[k];
+          fn(script.getAttribute(prefix + k));
         }
       }
     }
-    win.trakless = trakless;
-    return module.exports = trakless;
-  })(window);
+  }
+
+  win.trakless = trakless;
+
+  module.exports = trakless;
 
 }).call(this);
 
