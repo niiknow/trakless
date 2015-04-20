@@ -1808,8 +1808,9 @@ module.exports = flashdetect;
 3: [function(require, module, exports) {
 (function() {
   (function(win) {
-    var doc, domevent, myutil;
+    var cookie, doc, domevent, myutil;
     domevent = require('domevent');
+    cookie = require('cookie');
     doc = win.document;
 
     /**
@@ -1995,7 +1996,7 @@ module.exports = flashdetect;
 
 }).call(this);
 
-}, {"domevent":18}],
+}, {"domevent":18,"cookie":6}],
 18: [function(require, module, exports) {
 myObj = null
 mydefine = function(h, F){

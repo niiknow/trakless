@@ -1,7 +1,7 @@
 ((win) ->
   domevent = require('domevent')
+  cookie = require('cookie')
   doc = win.document
-
 
   ###*
   #  util
