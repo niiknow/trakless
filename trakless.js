@@ -1832,8 +1832,8 @@ module.exports = flashdetect;
         var camelCaseName, data, i, k, len, name, ref, v;
         data = {};
         ref = el.attributes;
-        for (v = i = 0, len = ref.length; i < len; v = ++i) {
-          k = ref[v];
+        for (k = i = 0, len = ref.length; i < len; k = ++i) {
+          v = ref[k];
           name = /^data-/.replace(attr.name, '');
           camelCaseName = name.replace(/-(.)/g, function($0, $1) {
             return $1.toUpperCase();
@@ -1971,6 +1971,16 @@ module.exports = flashdetect;
 
       myutil.trim = function(v) {
         return v.replace(/^\s+|\s+$/gm, '');
+      };
+
+
+      /**
+       * set a class
+      #
+       */
+
+      myutil.setClass = function(el, cls) {
+        return domevent(el).set('$', cls);
       };
 
       return myutil;
