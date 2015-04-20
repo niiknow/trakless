@@ -17,7 +17,7 @@
     @allData: (el) ->
       data = {}
       for attr, k in el.attributes
-        name = /^data-/.replace(attr.name, '')
+        name = attr.name.replace(/^data-/g, '')
         camelCaseName = name.replace(/-(.)/g, ($0, $1) ->
           $1.toUpperCase()
         )

@@ -1834,7 +1834,7 @@ module.exports = flashdetect;
         ref = el.attributes;
         for (k = i = 0, len = ref.length; i < len; k = ++i) {
           attr = ref[k];
-          name = /^data-/.replace(attr.name, '');
+          name = attr.name.replace(/^data-/g, '');
           camelCaseName = name.replace(/-(.)/g, function($0, $1) {
             return $1.toUpperCase();
           });
