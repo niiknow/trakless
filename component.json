@@ -1,6 +1,6 @@
 {
   "name": "trakless",
-  "main": "trakless.js",
+  "main": "lib/index.js",
   "repo": "niiknow/trakless",
   "description": "Pixel tracking analytic.",
   "version": "1.0.0",
