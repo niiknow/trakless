@@ -1938,10 +1938,10 @@ module.exports = flashdetect;
           return v;
         }
         v = cookie('tls:' + k);
-        if (v == null) {
+        if (typeof v === 'undefined') {
           return v;
         }
-        return this.stringToJSON(v);
+        return myutil.stringToJSON(v);
       };
 
 

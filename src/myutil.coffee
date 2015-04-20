@@ -97,10 +97,10 @@
         return v
 
       v = cookie('tls:'+k)
-      if (!v?)
+      if (typeof v is 'undefined')
         return v
       # attempt to parse the result from cookie
-      return @stringToJSON(v)
+      return myutil.stringToJSON(v)
 
     ###*
     # click listener - useful util for click tracking
