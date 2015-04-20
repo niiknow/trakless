@@ -1918,7 +1918,7 @@ module.exports = flashdetect;
       if (typeof v === 'undefined') {
         return v;
       }
-      return myutil.stringToJSON(v);
+      return this.stringToJSON(v);
     };
 
 

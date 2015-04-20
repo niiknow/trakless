@@ -63,7 +63,7 @@ class myutil
     if (typeof v is 'undefined')
       return v
     # attempt to parse the result from cookie
-    return myutil.stringToJSON(v)
+    return @stringToJSON(v)
 
   ###*
   # click listener - useful util for click tracking
