@@ -1910,9 +1910,11 @@ module.exports = flashdetect;
       myutil.stringToJSON = function(v) {
         var v2;
         if (typeof v === "string") {
-          v2 = domevent.parseJSON(v);
-          if (!(v2 == null)) {
-            return v2;
+          if (v.indexOf('{') >= 0 || v.indexOf('[') >= 0) {
+            v2 = domevent.parseJSON(v);
+            if (!(v2 == null)) {
+              return v2;
+            }
           }
         }
         return v;

@@ -76,8 +76,9 @@
     ####
     @stringToJSON: (v) ->
       if (typeof v is "string")
-        v2 = domevent.parseJSON(v)
-        return v2 unless !v2?
+        if (v.indexOf('{') >= 0 or v.indexOf('[') >= 0)
+          v2 = domevent.parseJSON(v)
+          return v2 unless !v2?
 
       return v
 
