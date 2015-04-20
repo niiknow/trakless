@@ -73,10 +73,10 @@ class mytrakless
   # similar to emit, except it broadcast to parent
   #
   ###
-  broadcast: (ename, edata) ->
+  broadcast: (en, ed) ->
     # trigger only if $trakless2 has been initialized
     if $trakless2?
-      trakless2.emit(ename, edata)
+      $trakless2.emit(en, ed)
     @
 
 # initialize $trakless2 to allow event pass to anybody listening on the parent

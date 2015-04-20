@@ -189,9 +189,9 @@
     #
      */
 
-    mytrakless.prototype.broadcast = function(ename, edata) {
+    mytrakless.prototype.broadcast = function(en, ed) {
       if (typeof $trakless2 !== "undefined" && $trakless2 !== null) {
-        trakless2.emit(ename, edata);
+        $trakless2.emit(en, ed);
       }
       return this;
     };
