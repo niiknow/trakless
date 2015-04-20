@@ -1891,7 +1891,7 @@ module.exports = flashdetect;
 
       myutil.trigger = function(ename, edata) {
         if (this.trakless2 && this.trakless2.util) {
-          if (trakless2.util !== this.util) {
+          if (this.trakless2.util !== this.util) {
             this.trakless2.util.trigger({
               type: ename,
               detail: edata
