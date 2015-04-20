@@ -63,7 +63,7 @@
     @trigger: (ename, edata) ->
       # trigger only if $trakless2 has been initialized
       if @trakless2 and @trakless2.util
-        if (@trakless2.util != @.util)
+        if (@trakless2.util != @)
           @trakless2.util.trigger
             type: ename
             detail: edata
