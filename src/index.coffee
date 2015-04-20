@@ -2,6 +2,7 @@ win = window
 tracker = require('./tracker.coffee')
 myutil = require('./myutil.coffee')
 xstore = require('xstore')
+Emitter = require('emitter')
 
 $defaultTracker = null
 $siteid = 0
@@ -11,14 +12,14 @@ $pixel = '/pixel.gif'
 # tracker factory
 #
 ###
-class trakless
+class mytrakless
   ###*
   # set default siteid
   #
   # @param {Number} siteid - the site id
   # @return {Object}
   ###
-  @setSiteId: (siteid) ->
+  setSiteId: (siteid) ->
     $siteid = if siteid > 0 then siteid else $siteid
     return
 
@@ -28,7 +29,7 @@ class trakless
   # @param {String} pixel - the default pixel url
   # @return {Object}
   ###
-  @setPixel: (pixelUrl) ->
+  setPixel: (pixelUrl) ->
     $pixel = pixelUrl or $pixel
     return
 
@@ -37,7 +38,7 @@ class trakless
   #
   # @return {Object}
   ###
-  @store: xstore
+  store: xstore
 
   ###*
   # you can provide different siteid and pixelUrl for in multi-tracker and site scenario
@@ -46,7 +47,7 @@ class trakless
   # @param {String} pixelUrl - the pixel url
   # @return {Object}
   ###
-  @getTracker: (siteid, pixelUrl) ->
+  getTracker: (siteid, pixelUrl) ->
     rst = new tracker(siteid, pixelUrl)
     rst.siteid = siteid or $siteid
     rst.pixel = pixelUrl or $pixel
@@ -57,7 +58,7 @@ class trakless
   # get the default racker
   #
   ###
-  @getDefaultTracker: () ->
+  getDefaultTracker: () ->
     if (!$defaultTracker?)
       $defaultTracker = trakless.getTracker()
     return $defaultTracker
@@ -66,9 +67,21 @@ class trakless
   # utility
   #
   ###
-  @util: myutil
+  util: myutil
+
+  ###*
+  # similar to emit, except it broadcast to parent
+  #
+  ###
+  broadcast: (ename, edata) ->
+    # trigger only if $trakless2 has been initialized
+    if $trakless2?
+      trakless2.emit(ename, edata)
+    @
 
 # initialize $trakless2 to allow event pass to anybody listening on the parent
+trakless = new mytrakless
+Emitter(trakless)
 $trakless2 = trakless
 if win.top != win
 
@@ -78,8 +91,6 @@ if win.top != win
     $trakless2 = traklessParent
   catch # swallow any security error
     $trakless2 = win.parent.trakless
-
-trakless.util.trakless2 = $trakless2
 
 # auto init based on script attribute
 attrs =
