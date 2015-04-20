@@ -1937,7 +1937,11 @@ module.exports = flashdetect;
           });
           return v;
         }
-        return this.stringToJSON(cookie('tls:' + k));
+        v = cookie('tls:' + k);
+        if (v == null) {
+          return v;
+        }
+        return this.stringToJSON(v);
       };
 
 

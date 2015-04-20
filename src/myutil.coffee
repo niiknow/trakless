@@ -96,8 +96,11 @@
         cookie('tls:'+k, v, { path: '/' })
         return v
 
+      v = cookie('tls:'+k)
+      if (!v?)
+        return v
       # attempt to parse the result from cookie
-      return @stringToJSON(cookie('tls:'+k))
+      return @stringToJSON(v)
 
     ###*
     # click listener - useful util for click tracking
