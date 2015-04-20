@@ -1829,11 +1829,11 @@ module.exports = flashdetect;
        */
 
       myutil.allData = function(el) {
-        var camelCaseName, data, i, k, len, name, ref, v;
+        var attr, camelCaseName, data, i, k, len, name, ref;
         data = {};
         ref = el.attributes;
         for (k = i = 0, len = ref.length; i < len; k = ++i) {
-          v = ref[k];
+          attr = ref[k];
           name = /^data-/.replace(attr.name, '');
           camelCaseName = name.replace(/-(.)/g, function($0, $1) {
             return $1.toUpperCase();
