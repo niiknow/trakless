@@ -1,5 +1,5 @@
 {
-  "name": "lib/index.js",
+  "name": "trakless",
   "author": "tom nguyen <tom@noogen.net>",
   "version": "1.0.0",
   "license": "MIT",
@@ -9,7 +9,7 @@
     "pixel"
   ],
   "repository": "git://github.com/niiknow/trakless.git",
-  "main": "trakless.js",
+  "main": "lib/index.js",
   "dependencies": {},
   "devDependencies": {
     "coffee-script": "*",

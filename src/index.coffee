@@ -1,4 +1,4 @@
-win = window
+
 xstore = require('xstore')
 Emitter = require('emitter')
 domevent = require('domevent')
@@ -7,7 +7,10 @@ defaults = require('defaults')
 query = require('querystring')
 uuid = require('uuid')
 webanalyser = require('webanalyser')
+domify = require('domify')
 
+win = window
+doc = win.document
 $defaultTracker = null
 $siteid = 0
 $pixel = '/pixel.gif'
@@ -97,19 +100,7 @@ class util
       return v
     # attempt to parse the result from cookie
     return @stringToJSON(v)
-
-  ###*
-  # click listener - useful util for click tracking
-  #
-  # @param {String} el - element or parent
-  # @param {Function} handler - function handler
-  # @param {String} monitor - selector/query of child to monitor
-  # @return {Object}
-  ####
-  onClick: (el, handler, monitor) ->
-    domevent(el).on('click', handler, monitor)
-    @
-
+    
   ###*
   # document ready
   #
@@ -129,6 +120,20 @@ class util
   ###
   setClass: (el, cls) ->
     domevent(el).set('$', cls)
+
+  ###*
+  # append or retrieve html
+  #
+  ###
+  html: (el, html) ->
+    if html?
+      while el.firstChild?
+        el.removeChild el.firstChild
+
+      newDiv = domify(html)
+      el.appendChild newDiv
+    else
+      return el.innerHTML
 
 myutil = new util()
 
