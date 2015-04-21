@@ -51,12 +51,13 @@ class util
   ###
   allData: (el) ->
     data = {}
-    for attr, k in el.attributes
-      name = attr.name.replace(/^data-/g, '')
-      camelCaseName = name.replace(/-(.)/g, ($0, $1) ->
-        $1.toUpperCase()
-      )
-      data[camelCaseName] = attr.value
+    if (el?)
+      for attr, k in el.attributes
+        name = attr.name.replace(/^data-/g, '')
+        camelCaseName = name.replace(/-(.)/g, ($0, $1) ->
+          $1.toUpperCase()
+        )
+        data[camelCaseName] = attr.value
 
     return data
 
