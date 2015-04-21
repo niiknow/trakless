@@ -344,15 +344,15 @@
         myData.ht = ht;
         if (!self.uuid) {
           self.uuid = uuid();
-        }
-        if (self.store != null) {
-          self.store.get('trakless-uuid').then(function(id) {
-            if (!id) {
-              self.store.set('trakless-uuid', self.uuid);
-            }
-            self.uuid = id || self.uuid;
-            return self._trackit(myData, pixel);
-          });
+          if (self.store != null) {
+            self.store.get('trakless-uuid').then(function(id) {
+              if (!id) {
+                self.store.set('trakless-uuid', self.uuid);
+              }
+              self.uuid = id || self.uuid;
+              return self._trackit(myData, pixel);
+            });
+          }
         } else {
           self._trackit(myData, pixel);
         }

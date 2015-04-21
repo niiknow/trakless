@@ -184,7 +184,7 @@ class tracker
         myData.ht = ht
 
         if !self.uuid
-            self.uuid = uuid()
+          self.uuid = uuid()
 
           if self.store?
             self.store.get('trakless-uuid').then (id) ->
