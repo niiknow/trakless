@@ -186,12 +186,12 @@ class tracker
         if !self.uuid
             self.uuid = uuid()
 
-        if self.store?
-          self.store.get('trakless-uuid').then (id) ->
-            if !id 
+          if self.store?
+            self.store.get('trakless-uuid').then (id) ->
+              if !id 
                 self.store.set('trakless-uuid', self.uuid)
-            self.uuid = id or self.uuid
-            self._trackit(myData, pixel)
+              self.uuid = id or self.uuid
+              self._trackit(myData, pixel)
         else
           self._trackit(myData, pixel)
       @ # chaining
