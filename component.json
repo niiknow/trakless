@@ -11,7 +11,6 @@
   "dependencies": {
     "avetisk/defaults": "0.0.4",
     "desandro/doc-ready": "*",
-    "component/dom": "*",
     "component/json-fallback": "*",
     "component/cookie": "1.1.1",
     "component/emitter": "1.1.0",

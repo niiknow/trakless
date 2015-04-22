@@ -6,7 +6,6 @@ query = require('querystring')
 uuid = require('uuid')
 webanalyser = require('webanalyser')
 docReady = require('doc-ready')
-dom = require('dom')
 json = require('json-fallback')
 
 win = window
@@ -60,12 +59,6 @@ class util
         data[camelCaseName] = attr.value
 
     return data
-
-  ###*
-  # mini jquery
-  #
-  ####
-  $: dom
 
   ###*
   # parse a string to JSON, return string if fail
@@ -358,7 +351,8 @@ class mytrakless
   # @return {Object}
   ###
   setSiteId: (siteid) ->
-    $siteid = if siteid > 0 then siteid else $siteid
+    mysid = parseInt(siteid)
+    $siteid = if mysid > 0 then mysid else $siteid
     return
 
   ###*
@@ -368,7 +362,8 @@ class mytrakless
   # @return {Object}
   ###
   setPixel: (pixelUrl) ->
-    $pixel = pixelUrl or $pixel
+    if (pixelUrl)
+      $pixel = pixelUrl or $pixel
     return
 
   ###*
@@ -387,8 +382,11 @@ class mytrakless
   ###
   getTracker: (siteid, pixelUrl) ->
     rst = new tracker(siteid, pixelUrl)
-    rst.siteid = siteid or $siteid
-    rst.pixel = pixelUrl or $pixel
+    if (siteid)
+      rst.siteid = siteid or $siteid
+    if (pixelUrl)
+      rst.pixel = pixelUrl or $pixel
+      
     rst.store = xstore
     return rst
 
