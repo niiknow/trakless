@@ -166,7 +166,7 @@ class tracker
 
         # only copy over non-null value
         myData = {}
-        for k, v in data when v?
+        for k, v of data when v?
           if !(typeof v is "string") or (myutil.trim(v).length > 0)
             myData[k] = v
 

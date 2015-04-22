@@ -305,7 +305,7 @@
     };
 
     tracker.prototype._track = function(ht, extra) {
-      var data, i, k, len, myData, myDef, pixel, self, v;
+      var data, k, myData, myDef, pixel, self, v;
       self = this;
       if (extra == null) {
         extra = {};
@@ -318,8 +318,8 @@
         }
         data = ht === 'pageview' ? defaults(extra, myDef) : extra;
         myData = {};
-        for (v = i = 0, len = data.length; i < len; v = ++i) {
-          k = data[v];
+        for (k in data) {
+          v = data[k];
           if (v != null) {
             if (!(typeof v === "string") || (myutil.trim(v).length > 0)) {
               myData[k] = v;
