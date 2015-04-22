@@ -381,12 +381,9 @@ class mytrakless
   # @return {Object}
   ###
   getTracker: (siteid, pixelUrl) ->
-    rst = new tracker(siteid, pixelUrl)
-    if (siteid)
-      rst.siteid = siteid or $siteid
-    if (pixelUrl)
-      rst.pixel = pixelUrl or $pixel
-      
+    rst = new tracker()
+    rst.siteid = if siteid? then siteid else $siteid
+    rst.pixel = if pixelUrl? then pixelUrl else $pixel
     rst.store = xstore
     return rst
 
