@@ -166,9 +166,10 @@ class tracker
 
         # only copy over non-null value
         myData = {}
-        for k, v of data when v? and k?
+        for k, v of data when v?
           if !(typeof v is "string") or (myutil.trim(v).length > 0)
-            myData[k] = v
+            if ((k + '') != 'undefined')
+              myData[k] = v
 
         myData.z = new Date().getTime()
         myData.ht = ht
