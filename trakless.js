@@ -320,7 +320,7 @@
         myData = {};
         for (k in data) {
           v = data[k];
-          if (v != null) {
+          if ((v != null) && (k != null)) {
             if (!(typeof v === "string") || (myutil.trim(v).length > 0)) {
               myData[k] = v;
             }
