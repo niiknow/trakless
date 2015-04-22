@@ -1,13 +1,12 @@
-
 xstore = require('xstore')
 Emitter = require('emitter')
-domevent = require('domevent')
 cookie = require('cookie')
 defaults = require('defaults')
 query = require('querystring')
 uuid = require('uuid')
 webanalyser = require('webanalyser')
-domify = require('domify')
+docReady = require('doc-ready')
+dom = require('dom')
 
 win = window
 doc = win.document
@@ -65,7 +64,7 @@ class util
   # mini jquery
   #
   ####
-  $: domevent
+  $: dom
 
   ###*
   # parse a string to JSON, return string if fail
@@ -106,7 +105,7 @@ class util
   # document ready
   #
   ###
-  ready: domevent.ready
+  ready: docReady
 
   ###*
   # trim
@@ -121,20 +120,6 @@ class util
   ###
   setClass: (el, cls) ->
     domevent(el).set('$', cls)
-
-  ###*
-  # append or retrieve html
-  #
-  ###
-  html: (el, html) ->
-    if html?
-      while el.firstChild?
-        el.removeChild el.firstChild
-
-      newDiv = domify(html)
-      el.appendChild newDiv
-    else
-      return el.innerHTML
 
 myutil = new util()
 

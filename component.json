@@ -10,14 +10,14 @@
   ],
   "dependencies": {
     "avetisk/defaults": "0.0.4",
-    "component/domify": "*",
+    "desandro/doc-ready": "*",
+    "component/dom": "*",
     "component/cookie": "1.1.1",
     "component/emitter": "1.1.0",
     "component/querystring": "1.3.0",
     "gjohnson/uuid": "0.0.1",
     "niiknow/xstore": "*",
-    "niiknow/webanalyser": "*",
-    "niiknow/domevent": "*"
+    "niiknow/webanalyser": "*"
   },
   "development": {
     "yields/coverage": "*",
