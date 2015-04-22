@@ -7,6 +7,7 @@ uuid = require('uuid')
 webanalyser = require('webanalyser')
 docReady = require('doc-ready')
 dom = require('dom')
+json = require('json-fallback')
 
 win = window
 doc = win.document
@@ -72,13 +73,25 @@ class util
   # @param {String} v - string value
   # @return {Object}
   ####
-  stringToJSON: (v) ->
+  parseJSON: (v) ->
     if (typeof v is "string")
       if (v.indexOf('{') >= 0 or v.indexOf('[') >= 0)
-        v2 = domevent.parseJSON(v)
+        v2 = json.parse(v)
         return v2 unless !v2?
 
     return v
+
+  ###*
+  # parse a JSON to string, return string if fail
+  #
+  # @param {String} v - string value
+  # @return {Object}
+  ####
+  stringify: (v) ->
+    if (typeof v is "string")
+      return v
+
+    return json.stringify(v)
 
   ###*
   # get or set session data - store in cookie
@@ -91,7 +104,7 @@ class util
   session: (k, v) ->
     if (v?)
       if !(typeof v is "string")
-        v = domevent.toJSON(v)
+        v = @stringify(v)
       cookie('tls:'+k, v, { path: '/' })
       return v
 
@@ -99,8 +112,14 @@ class util
     if (typeof v is 'undefined')
       return v
     # attempt to parse the result from cookie
-    return @stringToJSON(v)
-    
+    return @parseJSON(v)
+  
+  ###*
+  # cookie
+  #
+  ###
+  cookie: cookie
+
   ###*
   # document ready
   #
@@ -113,13 +132,6 @@ class util
   ###
   trim: (v) ->
     return v.replace(/^\s+|\s+$/gm,'')
-
-  ###*
-  # set a class
-  #
-  ###
-  setClass: (el, cls) ->
-    domevent(el).set('$', cls)
 
 myutil = new util()
 
