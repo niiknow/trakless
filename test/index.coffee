@@ -6,7 +6,7 @@ describe 'trakless.pageview', ->
     trakless.setSiteId(1)
     traker = trakless.getDefaultTracker()
     traker.on 'track', (evt) -> 
-      assert evt is 'pageview', 'pageview pixel fired'
+      assert evt.ht is 'pageview', 'pageview pixel fired'
       done()
     traker.pageview()
 

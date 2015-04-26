@@ -140,10 +140,10 @@
   $sessionid = new Date().getTime() - $st;
 
   try {
-    $sessionid = session.getItem('tksuid');
+    $sessionid = session.getItem('tklsid');
     if ($sessionid == null) {
       $sessionid = new Date().getTime() - $st;
-      session.setItem('tksuid', $sessionid);
+      session.setItem('tklsid', $sessionid);
     }
   } catch (_error) {
 
@@ -311,8 +311,6 @@
   tracker = (function() {
     function tracker() {}
 
-    tracker.prototype.defaults = webanalyser.get();
-
     tracker.prototype.pixel = '//niiknow.github.io/pixel.gif';
 
     tracker.prototype.siteid = 0;
@@ -351,21 +349,28 @@
           }
         }
       }
+      self.emit('track', {
+        ht: ht,
+        pixel: pixel,
+        qs: [tkd, myData]
+      });
       getImage(pixel, query.stringify(tkd), query.stringify(myData));
-      self.emit('track', tkd.ht, tkd, myData);
+      self.emit('tracked', {
+        ht: ht,
+        pixel: pixel,
+        qs: [tkd, myData]
+      });
       return self;
     };
 
-    tracker.prototype._track = function(ht, extra) {
-      var data, myDef, pixel, self;
+    tracker.prototype._track = function(ht, ctx) {
+      var pixel, self;
       self = this;
-      if (extra == null) {
-        extra = {};
+      if (ctx == null) {
+        ctx = {};
       }
       if (self.siteid > 0) {
         pixel = myutil.trim(this.pixel);
-        myDef = self.defaults;
-        data = ht === 'pageview' ? defaults(extra, myDef) : extra;
         if (!self.uuid) {
           self.uuid = uuid();
           if (self.store != null) {
@@ -374,11 +379,11 @@
                 self.store.set('tklsuid', self.uuid);
               }
               self.uuid = id || self.uuid;
-              return self._tk(data, ht, pixel);
+              return self._tk(ctx, ht, pixel);
             });
           }
         } else {
-          self._tk(data, ht, pixel);
+          self._tk(ctx, ht, pixel);
         }
       }
       return this;
@@ -461,17 +466,17 @@
       var self;
       self = this;
       self._track = debounce(function() {
-        var item, k, ref, results, v;
+        var item, k, ref, v;
         self = this;
         item = queue.pop();
         if ((item != null)) {
+          self.emit('track', item);
           ref = self.trackers;
-          results = [];
           for (k in ref) {
             v = ref[k];
-            results.push(v.track(item.ht, item.ctx));
+            v.track(item.ht, item.ctx);
           }
-          return results;
+          return self.emit('tracked', item);
         }
       }, 222);
       return self;
@@ -542,7 +547,7 @@
         id = rst.getId();
         if (!self.trackers[id]) {
           self.trackers[id] = rst;
-          rst.on('track', self._track);
+          rst.on('tracked', self._track);
         }
         return self.trackers[id];
       }
@@ -648,6 +653,14 @@
       $trakless2 = win.parent.trakless;
     }
   }
+
+  trakless.on('track', function(item) {
+    var myDef;
+    if (item.ht === 'pageview') {
+      myDef = webanalyser.get();
+      return item.ctx = defaults(item.ctx, myDef);
+    }
+  });
 
   attrs = {
     site: function(value) {

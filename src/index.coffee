@@ -31,11 +31,11 @@ if(typeof(session) is 'undefined')
 $sessionid = new Date().getTime() - $st
 
 try 
-  $sessionid = session.getItem('tksuid')
+  $sessionid = session.getItem('tklsid')
   if !$sessionid?
     # get time since january 2014
     $sessionid = new Date().getTime() - $st
-    session.setItem('tksuid', $sessionid)
+    session.setItem('tklsid', $sessionid)
 catch
   # do nothing
 
@@ -155,7 +155,6 @@ myutil = new util()
 #
 ###
 class tracker
-    defaults: webanalyser.get() # each tracker has it's own defaults
     pixel: '//niiknow.github.io/pixel.gif' # each tracker can have its own pixel
     siteid: 0
     store: null
@@ -183,20 +182,20 @@ class tracker
               v = if v then 1 else 0
             myData[k] = v
 
+      # allow interception of data
+      self.emit('track', {ht: ht, pixel: pixel, qs: [tkd, myData]})
       getImage(pixel, query.stringify(tkd), query.stringify(myData))
-      self.emit('track', tkd.ht, tkd, myData)
+      self.emit('tracked', {ht: ht, pixel: pixel, qs: [tkd, myData]})
       return self
 
-    _track: (ht, extra) ->
+    _track: (ht, ctx) ->
       self = @
-      if (!extra?)
-        extra = {}
+      if (!ctx?)
+        ctx = {}
 
       # only track if valid siteid
       if (self.siteid > 0)
         pixel = myutil.trim(@pixel)
-        myDef = self.defaults
-        data = if (ht == 'pageview') then defaults(extra, myDef) else extra
 
         if !self.uuid
           self.uuid = uuid()
@@ -206,9 +205,9 @@ class tracker
               if !id 
                 self.store.set('tklsuid', self.uuid)
               self.uuid = id or self.uuid
-              self._tk(data, ht, pixel)
+              self._tk(ctx, ht, pixel)
         else
-          self._tk(data, ht, pixel)
+          self._tk(ctx, ht, pixel)
       @ # chaining
 
     ###*
@@ -274,8 +273,10 @@ class mytrakless
       self = @
       item = queue.pop()
       if (item?)
+        self.emit('track', item)    
         for k, v of self.trackers
-          v.track(item.ht, item.ctx)
+          v.track(item.ht, item.ctx)   
+        self.emit('tracked', item)       
     , 222
 
     return self
@@ -333,7 +334,7 @@ class mytrakless
       id = rst.getId()
       if !self.trackers[id]
         self.trackers[id] = rst
-        rst.on 'track', self._track
+        rst.on 'tracked', self._track
 
       return self.trackers[id]
 
@@ -408,13 +409,18 @@ trakless = new mytrakless
 Emitter(trakless)
 $trakless2 = trakless
 if win.top != win
-
   try
     # this statement throw error if access is denied
     traklessParent = win.top.trakless
     $trakless2 = traklessParent
   catch # swallow any security error
     $trakless2 = win.parent.trakless
+
+# plugin example
+trakless.on 'track', (item) ->
+  if (item.ht is 'pageview')
+    myDef = webanalyser.get()
+    item.ctx = defaults(item.ctx, myDef) 
 
 # auto init based on script attribute
 attrs =
