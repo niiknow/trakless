@@ -17,9 +17,12 @@ hasNOL = win.navigator.onLine
 session = win.sessionStorage
 $siteid = 0
 $pixel = '//niiknow.github.io/pixel.gif'
+$uuid = null
+$userid = null
 
 # get first day of current year
 $st = (new Date(new Date().getFullYear(), 0, 1)).getTime()
+$sessionid = new Date().getTime() - $st
 
 $defaults = null
 if(typeof(session) is 'undefined')
@@ -28,8 +31,6 @@ if(typeof(session) is 'undefined')
       return cookie(k)
     setItem: (k, v) ->
       return cookie(k, v, { path: '/' })
-
-$sessionid = new Date().getTime() - $st
 
 try 
   $sessionid = session.getItem('tklsid')
@@ -188,6 +189,9 @@ class tracker
         ht: ht
         z: data.z
 
+      if ($userid)
+        tkd.uid = $userid
+
       # only copy over non-null value
       myData = {}
       for k, v of data when v?
@@ -215,12 +219,14 @@ class tracker
 
         if !self.uuid
           self.uuid = uuid()
+          $uuid = self.uuid
 
           if self.store?
             self.store.get('tklsuid').then (id) ->
               if !id 
                 self.store.set('tklsuid', self.uuid)
               self.uuid = id or self.uuid
+              $uuid = self.uuid
               self._tk(ctx, ht, pixel)
         else
           self._tk(ctx, ht, pixel)
@@ -299,6 +305,14 @@ class mytrakless
   setPixel: (pixelUrl) ->
     if (pixelUrl)
       $pixel = pixelUrl or $pixel
+    return
+  ###*
+   * The domain user id.
+   * @param {string} id the domain user id
+  ###
+  setUserId: (id) ->
+    if (id)
+      $userid = id or $userid
     return
 
   ###*
@@ -391,7 +405,7 @@ class mytrakless
 
     ctx = ctx or {}
     ctx.z = new Date().getTime() - $st
-    queue.push({ht: ht, ctx: ctx})
+    queue.push({ ht: ht, ctx: ctx, uuid: $uuid, usid: $sessionid, uid: $userid })
     self._track()
     return self
 

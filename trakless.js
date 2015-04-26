@@ -84,7 +84,7 @@
 })({
 1: [function(require, module, exports) {
 (function() {
-  var $defaults, $pixel, $sessionid, $siteid, $st, $trakless2, Emitter, attrs, cookie, debounce, defaults, doc, docReady, fn, getImage, hasNOL, i, isDom, j, k, len, len1, lsqueue, mystore, mytrakless, myutil, prefix, query, queue, ref, ref1, script, session, tracker, trakless, traklessParent, util, uuid, webanalyser, win, xstore;
+  var $defaults, $pixel, $sessionid, $siteid, $st, $trakless2, $userid, $uuid, Emitter, attrs, cookie, debounce, defaults, doc, docReady, fn, getImage, hasNOL, i, isDom, j, k, len, len1, lsqueue, mystore, mytrakless, myutil, prefix, query, queue, ref, ref1, script, session, tracker, trakless, traklessParent, util, uuid, webanalyser, win, xstore;
 
   mystore = require('xstore');
 
@@ -122,7 +122,13 @@
 
   $pixel = '//niiknow.github.io/pixel.gif';
 
+  $uuid = null;
+
+  $userid = null;
+
   $st = (new Date(new Date().getFullYear(), 0, 1)).getTime();
+
+  $sessionid = new Date().getTime() - $st;
 
   $defaults = null;
 
@@ -138,8 +144,6 @@
       }
     };
   }
-
-  $sessionid = new Date().getTime() - $st;
 
   try {
     $sessionid = session.getItem('tklsid');
@@ -358,6 +362,9 @@
         ht: ht,
         z: data.z
       };
+      if ($userid) {
+        tkd.uid = $userid;
+      }
       myData = {};
       for (k in data) {
         v = data[k];
@@ -396,12 +403,14 @@
         pixel = myutil.trim(this.pixel);
         if (!self.uuid) {
           self.uuid = uuid();
+          $uuid = self.uuid;
           if (self.store != null) {
             self.store.get('tklsuid').then(function(id) {
               if (!id) {
                 self.store.set('tklsuid', self.uuid);
               }
               self.uuid = id || self.uuid;
+              $uuid = self.uuid;
               return self._tk(ctx, ht, pixel);
             });
           }
@@ -507,6 +516,18 @@
     mytrakless.prototype.setPixel = function(pixelUrl) {
       if (pixelUrl) {
         $pixel = pixelUrl || $pixel;
+      }
+    };
+
+
+    /**
+     * The domain user id.
+     * @param {string} id the domain user id
+     */
+
+    mytrakless.prototype.setUserId = function(id) {
+      if (id) {
+        $userid = id || $userid;
       }
     };
 
@@ -621,7 +642,10 @@
       ctx.z = new Date().getTime() - $st;
       queue.push({
         ht: ht,
-        ctx: ctx
+        ctx: ctx,
+        uuid: $uuid,
+        usid: $sessionid,
+        uid: $userid
       });
       self._track();
       return self;
