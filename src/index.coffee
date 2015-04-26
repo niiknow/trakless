@@ -237,39 +237,12 @@ class tracker
       self = @
       # only track after doc is ready
       myutil.ready ->
+        ctx = ctx or {}
+        if (!ctx.z)
+          ctx.z = new Date().getTime() - $st
+
         self._track(ht or 'custom', ctx)
       @ # chaining
-
-    ###*
-    # track pageview
-    #
-    # @param {Object} ctx - extended data
-    # @return {Object}
-    ###
-    pageview: (ctx) ->
-      @track('pageview', ctx)
-
-    ###*
-    # track event
-    #
-    # @param {String} category
-    # @param {String} action
-    # @param {String} label
-    # @param {String} property
-    # @param {String} value - Values must be non-negative.
-    # @return {Object}
-    ###
-    event: (category, action, label, property, value) ->
-      if (value and value < 0)
-        value = null
-
-      @track('event', {
-        ec: category || 'event'
-        ea: action
-        el: label
-        ep: property
-        ev: value
-      })
 
 # allow tracker to emmit events
 Emitter(tracker.prototype)

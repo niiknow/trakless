@@ -425,46 +425,13 @@
       var self;
       self = this;
       myutil.ready(function() {
+        ctx = ctx || {};
+        if (!ctx.z) {
+          ctx.z = new Date().getTime() - $st;
+        }
         return self._track(ht || 'custom', ctx);
       });
       return this;
-    };
-
-
-    /**
-     * track pageview
-    #
-     * @param {Object} ctx - extended data
-     * @return {Object}
-     */
-
-    tracker.prototype.pageview = function(ctx) {
-      return this.track('pageview', ctx);
-    };
-
-
-    /**
-     * track event
-    #
-     * @param {String} category
-     * @param {String} action
-     * @param {String} label
-     * @param {String} property
-     * @param {String} value - Values must be non-negative.
-     * @return {Object}
-     */
-
-    tracker.prototype.event = function(category, action, label, property, value) {
-      if (value && value < 0) {
-        value = null;
-      }
-      return this.track('event', {
-        ec: category || 'event',
-        ea: action,
-        el: label,
-        ep: property,
-        ev: value
-      });
     };
 
     return tracker;
