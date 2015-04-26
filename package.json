@@ -6,7 +6,8 @@
   "description": "Pixel tracking analytics.",
   "keywords": [
     "analytic",
-    "pixel"
+    "pixel",
+    "tracking"
   ],
   "repository": "git://github.com/niiknow/trakless.git",
   "main": "lib/index.js",

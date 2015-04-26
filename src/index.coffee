@@ -14,12 +14,11 @@ queue = new lsqueue('tksq')
 win = window
 doc = win.document
 session = win.sessionStorage
-$defaultTracker = null
 $siteid = 0
-$pixel = '/pixel.gif'
-xs = 
-# start time january 2014
-$st = new Date().getTime()
+$pixel = '//niiknow.github.io/pixel.gif'
+
+# get first day of current year
+$st = (new Date(new Date().getFullYear(), 0, 1)).getTime()
 
 $defaults = null
 if(typeof(session) is 'undefined')
@@ -29,11 +28,16 @@ if(typeof(session) is 'undefined')
     setItem: (k, v) ->
       return cookie(k, v, { path: '/' })
 
-$sessionid = session.getItem('tksuid')
-if !$sessionid?
-  # get time since january 2014
-  $sessionid = new Date().getTime() - 1420092000000
-  session.setItem('tksuid', $sessionid)
+$sessionid = new Date().getTime() - $st
+
+try 
+  $sessionid = session.getItem('tksuid')
+  if !$sessionid?
+    # get time since january 2014
+    $sessionid = new Date().getTime() - $st
+    session.setItem('tksuid', $sessionid)
+catch
+  # do nothing
 
 ###*
 # Send image request to server using GET.
@@ -42,6 +46,9 @@ if !$sessionid?
 ###
 getImage = (cfgUrl, tks, qs, callback) ->
     image = new Image(1, 1)
+
+    if (cfgUrl.indexOf('//') == 0)
+      cfgUrl = if win.location.protocol is'https' then "https:#{cfgUrl}" else "http:#{cfgUrl}" 
 
     image.onload = ->
       iterator = 0
@@ -52,12 +59,6 @@ getImage = (cfgUrl, tks, qs, callback) ->
     url = cfgUrl + (if cfgUrl.indexOf('?') < 0 then '?' else '&') + "#{tks}&#{qs}"
     image.src = url
     return image 
-
-processQueue = debounce ->
-  item = queue.pop()
-  if (item?)
-    getImage(item.pixel, item.tkd, item.myData, processQueue)
-, 222
 
 ###*
 #  util
@@ -155,25 +156,34 @@ myutil = new util()
 ###
 class tracker
     defaults: webanalyser.get() # each tracker has it's own defaults
-    pixel: '/pixel.gif' # each tracker can have its own pixel
+    pixel: '//niiknow.github.io/pixel.gif' # each tracker can have its own pixel
     siteid: 0
     store: null
     uuid: null
-    _tk: (myData, ht, pixel) ->
+    getId: () ->
       self = @
+      return "#{self.siteid}-#{self.pixel}".replace(/[^a-zA-z]/gi, '$')
+    _tk: (data, ht, pixel) ->
+      self = @
+
       tkd = 
         uuid: self.uuid
         siteid: self.siteid
         usid: $sessionid
         ht: ht
-        z: new Date().getTime() - $st
+        z: data.z
 
-      queue.push
-        pixel: pixel
-        tkd: query.stringify(tkd)
-        myData: query.stringify(myData)
+      # only copy over non-null value
+      myData = {}
+      for k, v of data when v?
+        if !(typeof v is "string") or (myutil.trim(v).length > 0)
+          # ignore uuid and z
+          if ((k + '') != 'undefined' and k != 'uuid' and k != 'z')
+            if (typeof v is 'boollean')
+              v = if v then 1 else 0
+            myData[k] = v
 
-      processQueue()
+      getImage(pixel, query.stringify(tkd), query.stringify(myData))
       self.emit('track', tkd.ht, tkd, myData)
       return self
 
@@ -186,57 +196,43 @@ class tracker
       if (self.siteid > 0)
         pixel = myutil.trim(@pixel)
         myDef = self.defaults
-
-        # make sure that pixel work with local file system
-        if ((pixel.indexOf('//') == 0) and (myDef.dl.indexOf('http') != 0))
-          pixel = 'http:' + pixel
-
         data = if (ht == 'pageview') then defaults(extra, myDef) else extra
-
-        # only copy over non-null value
-        myData = {}
-        for k, v of data when v?
-          if !(typeof v is "string") or (myutil.trim(v).length > 0)
-            # ignore uuid and z
-            if ((k + '') != 'undefined' and k != 'uuid' and k != 'z')
-              myData[k] = v
-        
 
         if !self.uuid
           self.uuid = uuid()
 
           if self.store?
-            self.store.get('trakless-uuid').then (id) ->
+            self.store.get('tklsuid').then (id) ->
               if !id 
-                self.store.set('trakless-uuid', self.uuid)
+                self.store.set('tklsuid', self.uuid)
               self.uuid = id or self.uuid
-              self._tk(myData, ht, pixel)
+              self._tk(data, ht, pixel)
         else
-          self._tk(myData, ht, pixel)
+          self._tk(data, ht, pixel)
       @ # chaining
 
     ###*
     # track generic method
     #
     # @param {String} ht - hit types with possible values of 'pageview', 'event', 'transaction', 'item', 'social', 'exception', 'timing', 'app', 'custom'
-    # @param {Object} extra - extended data
+    # @param {Object} ctx - extended data
     # @return {Object}
     ###
-    track: (ht, extra) ->
+    track: (ht, ctx) ->
       self = @
       # only track after doc is ready
       myutil.ready ->
-        self._track(ht or 'custom', extra)
+        self._track(ht or 'custom', ctx)
       @ # chaining
 
     ###*
     # track pageview
     #
-    # @param {Object} extra - extended data
+    # @param {Object} ctx - extended data
     # @return {Object}
     ###
-    trackPageView: (extra) ->
-      @track('pageview', extra)
+    pageview: (ctx) ->
+      @track('pageview', ctx)
 
     ###*
     # track event
@@ -248,7 +244,7 @@ class tracker
     # @param {String} value - Values must be non-negative.
     # @return {Object}
     ###
-    trackEvent: (category, action, label, property, value) ->
+    event: (category, action, label, property, value) ->
       if (value and value < 0)
         value = null
 
@@ -268,6 +264,28 @@ Emitter(tracker.prototype)
 #
 ###
 class mytrakless
+  ###*
+   * create an instance of trakless
+   * @return {object}
+  ###
+  constructor: ()->
+    self = @
+    self._track = debounce ->
+      self = @
+      item = queue.pop()
+      if (item?)
+        for k, v of self.trackers
+          v.track(item.ht, item.ctx)
+    , 222
+
+    return self
+
+  ###*
+   * store all trackers
+   * @type {Object}
+  ###
+  trackers: {}
+
   ###*
   # set default siteid
   #
@@ -305,20 +323,33 @@ class mytrakless
   # @return {Object}
   ###
   getTracker: (siteid, pixelUrl) ->
+    self = @
     rst = new tracker()
     rst.siteid = if siteid? then siteid else $siteid
     rst.pixel = if pixelUrl? then pixelUrl else $pixel
-    rst.store = xstore
-    return rst
+
+    if rst.siteid? and rst.pixel?
+      rst.store = xstore
+      id = rst.getId()
+      if !self.trackers[id]
+        self.trackers[id] = rst
+        rst.on 'track', self._track
+
+      return self.trackers[id]
+
+    throw "siteid or pixelUrl is required"
 
   ###*
   # get the default racker
   #
   ###
   getDefaultTracker: () ->
-    if (!$defaultTracker?)
-      $defaultTracker = trakless.getTracker()
-    return $defaultTracker
+    self = @
+    id = "#{$siteid}-#{$pixel}".replace(/[^a-zA-z]/gi, '$')
+    if (!self.trackers[id]?)
+      self.getTracker() 
+
+    return self.trackers[id]
 
   ###*
   # utility
@@ -327,14 +358,50 @@ class mytrakless
   util: myutil
 
   ###*
-  # similar to emit, except it broadcast to parent
-  #
+   * track event
+   * @param  {string} category
+   * @param  {string} action
+   * @param  {string} label
+   * @param  {string} property
+   * @param  {string} value
+   * @return {object}
   ###
-  broadcast: (en, ed) ->
-    # trigger only if $trakless2 has been initialized
-    if $trakless2?
-      $trakless2.emit(en, ed)
-    @
+  event: (category, action, label, property, value) ->
+   if (value and value < 0)
+      value = null
+
+    @track('event', {
+      ec: category || 'event'
+      ea: action
+      el: label
+      ep: property
+      ev: value
+    })
+
+  ###*
+   * track page view
+   * @param  {object} ctx context/addtional parameter
+   * @return {object}
+  ###
+  pageview: (ctx) ->
+    @track('pageview', ctx)
+
+  ###*
+   * track anything
+   * @param  {string} ht  hit type
+   * @param  {object} ctx context/additonal parameter
+   * @return {object}
+  ###
+  track: (ht, ctx) ->
+    self = @
+    self.getDefaultTracker()
+
+    ctx = ctx or {}
+    ctx.z = new Date().getTime() - $st
+    queue.push({ht: ht, ctx: ctx})
+    self._track()
+    return self
+
 
 # initialize $trakless2 to allow event pass to anybody listening on the parent
 trakless = new mytrakless
@@ -365,4 +432,5 @@ for script in win.document.getElementsByTagName("script")
 
 # initialize trakless as global
 win.trakless = trakless
+win._tk = trakless
 module.exports = trakless

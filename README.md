@@ -16,14 +16,15 @@ get default tracker
 ## trakless#getTracker(siteId, pixelUrl)
 Trakless allow you to have multiple tracker, each with it's own pixel.
 
-## tracker#track(hitType, dataObj)
+## trakless#track(hitType, dataObj)
 hitType - a string determine the hit type
 dataObj - the extra data to pass along with trakless
 
-## tracker#trackPageView
+## trakless#pageview(context)
 track page view, trakless automatically gather some basic data about the page
+context - additonal context/parameter
 
-## tracker#trackEvent(category, action, label, property, value)
+## trakless#event(category, action, label, property, value)
 track an event
 
 That is all.  Trackless uses localStorage to store all it's tracking for data integrity and performance.

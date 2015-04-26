@@ -3,10 +3,11 @@
   "main": "lib/index.js",
   "repo": "niiknow/trakless",
   "description": "Pixel tracking analytic.",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "keywords": [
     "analytic",
-    "pixel"
+    "pixel",
+    "tracking"
   ],
   "dependencies": {
     "avetisk/defaults": "0.0.4",
