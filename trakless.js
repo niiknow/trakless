@@ -84,9 +84,11 @@
 })({
 1: [function(require, module, exports) {
 (function() {
-  var $defaultTracker, $defaults, $pixel, $sessionid, $siteid, $trakless2, Emitter, attrs, cookie, defaults, doc, docReady, fn, getImage, i, j, json, k, len, len1, mytrakless, myutil, prefix, query, ref, ref1, script, tracker, trakless, traklessParent, util, uuid, webanalyser, win, xstore;
+  var $defaultTracker, $defaults, $pixel, $sessionid, $siteid, $st, $trakless2, Emitter, attrs, cookie, defaults, doc, docReady, fn, getImage, i, j, json, k, len, len1, mystore, mytrakless, myutil, prefix, query, ref, ref1, script, session, tracker, trakless, traklessParent, util, uuid, webanalyser, win, xs, xstore;
 
-  xstore = require('xstore');
+  mystore = require('xstore');
+
+  xstore = new mystore();
 
   Emitter = require('emitter');
 
@@ -108,21 +110,36 @@
 
   doc = win.document;
 
+  session = win.sessionStorage;
+
   $defaultTracker = null;
 
   $siteid = 0;
 
   $pixel = '/pixel.gif';
 
+  xs = $st = 1388534400000;
+
   $defaults = null;
 
-  $sessionid = cookie('trakless:usid');
+  if (typeof session === 'undefined') {
+    session = {
+      getItem: function(k) {
+        return cookie(k);
+      },
+      setItem: function(k, v) {
+        return cookie(k, v, {
+          path: '/'
+        });
+      }
+    };
+  }
+
+  $sessionid = session.getItem('tksuid');
 
   if ($sessionid == null) {
-    $sessionid = new Date().getTime();
-    cookie('tls:usid', $sessionid, {
-      path: '/'
-    });
+    $sessionid = new Date().getTime() - $st;
+    session.setItem('tksuid', $sessionid);
   }
 
 
@@ -132,8 +149,8 @@
   #
    */
 
-  getImage = function(cfgUrl, request, callback) {
-    var image;
+  getImage = function(cfgUrl, tks, qs, callback) {
+    var image, url;
     image = new Image(1, 1);
     image.onload = function() {
       var iterator;
@@ -142,7 +159,8 @@
         callback();
       }
     };
-    image.src = cfgUrl + (cfgUrl.indexOf('?') < 0 ? '?' : '&') + request;
+    url = cfgUrl + (cfgUrl.indexOf('?') < 0 ? '?' : '&') + (tks + "&" + qs);
+    image.src = url;
     return image;
   };
 
@@ -283,7 +301,7 @@
   tracker = (function() {
     function tracker() {}
 
-    tracker.prototype.defaults = webanalyser.getResult();
+    tracker.prototype.defaults = webanalyser.get();
 
     tracker.prototype.pixel = '/pixel.gif';
 
@@ -293,13 +311,17 @@
 
     tracker.prototype.uuid = null;
 
-    tracker.prototype._trackit = function(myData, pixel) {
-      var self;
+    tracker.prototype._trackit = function(myData, ht, pixel) {
+      var self, tkd;
       self = this;
-      myData.uuid = self.uuid;
-      myData.siteid = self.siteid;
-      myData.usid = $sessionid;
-      getImage(pixel, query.stringify(myData));
+      tkd = {
+        uuid: self.uuid,
+        siteid: self.siteid,
+        usid: $sessionid,
+        ht: ht,
+        z: new Date().getTime() - $st
+      };
+      getImage(pixel, query.stringify(tkd), query.stringify(myData));
       self.emit('track', myData.ht, myData);
       return self;
     };
@@ -322,14 +344,12 @@
           v = data[k];
           if (v != null) {
             if (!(typeof v === "string") || (myutil.trim(v).length > 0)) {
-              if ((k + '') !== 'undefined') {
+              if ((k + '') !== 'undefined' && k !== 'uuid' && k !== 'z') {
                 myData[k] = v;
               }
             }
           }
         }
-        myData.z = new Date().getTime();
-        myData.ht = ht;
         if (!self.uuid) {
           self.uuid = uuid();
           if (self.store != null) {
@@ -338,11 +358,11 @@
                 self.store.set('trakless-uuid', self.uuid);
               }
               self.uuid = id || self.uuid;
-              return self._trackit(myData, pixel);
+              return self._trackit(myData, ht, pixel);
             });
           }
         } else {
-          self._trackit(myData, pixel);
+          self._trackit(myData, ht, pixel);
         }
       }
       return this;
@@ -389,7 +409,7 @@
      * @return {Object}
      */
 
-    tracker.prototype.trackEvent = function(category, action, label, value) {
+    tracker.prototype.trackEvent = function(category, action, label, property, value) {
       if (value && value < 0) {
         value = null;
       }
@@ -397,133 +417,9 @@
         ec: category || 'event',
         ea: action,
         el: label,
+        ep: property,
         ev: value
       });
-    };
-
-
-    /**
-     * track item
-    #
-     * @param {String} id - *required* [OD564]
-     * @param {Number} name - *required* [Shoe] Specifies the item name.
-     * @param {Number} price [3.50] Specifies the price for a single item / unit.
-     * @param {Number} quantity [4] Specifies the number of items purchased.
-     * @param {String} code [SKU47] Specifies the SKU or item code.
-     * @param {String} category [Blue] Specifies the category that the item belongs to.
-     * @param {String} currencycode [EUR] When present indicates the local currency for all transaction currency values. Value should be a valid ISO 4217 currency code.
-     * @return {Object}
-     */
-
-    tracker.prototype.trackItemOrTransaction = function(id, name, price, quantity, code, category, currencycode) {
-      return this.track('item', {
-        ti: id,
-        "in": name,
-        ip: price,
-        iq: quantity,
-        ic: code,
-        iv: category,
-        cu: currencycode
-      });
-    };
-
-
-    /**
-     * track transaction
-    #
-     * @param {String} id - *required* [OD564]
-     * @param {String} affiliation [Member] Specifies the affiliation or store name.
-     * @param {Number} revenue [15.47] Specifies the total revenue associated with the transaction. This value should include any shipping or tax costs.
-     * @param {Number} shipping [3.50] Specifies the total shipping cost of the transaction.
-     * @param {Number} tax [1.20] Specifies the total tax of the transaction.
-     * @param {Number} price [3.50] Specifies the price for a single item / unit.
-     * @param {Number} quantity [4] Specifies the number of items purchased.
-     * @param {String} code [SKU47] Specifies the SKU or item code.
-     * @param {String} category [Blue] Specifies the category that the item belongs to.
-     * @param {String} currencycode [EUR] When present indicates the local currency for all transaction currency values. Value should be a valid ISO 4217 currency code.
-     * @return {Object}
-     */
-
-    tracker.prototype.trackTransaction = function(id, affiliation, revenue, shipping, tax, name, price, quantity, code, category, currencycode) {
-      return this.track('transaction', {
-        ti: id,
-        ta: affiliation,
-        tr: revenue,
-        ts: shipping,
-        tt: tax,
-        "in": name,
-        ip: price,
-        iq: quantity,
-        ic: code,
-        iv: category,
-        cu: currencycode
-      });
-    };
-
-
-    /**
-     * track social
-    #
-     * @param {String} network - *required* [facebook] Specifies the social network, for example Facebook or Google Plus.
-     * @param {String} action - *required* [like] Specifies the social interaction action. For example on Google Plus when a user clicks the +1 button, the social action is 'plus'.
-     * @param {String} target - *required* [http://foo.com] Specifies the target of a social interaction. This value is typically a URL but can be any text.
-     * @return {Object}
-     */
-
-    tracker.prototype.trackSocial = function(network, action, target) {
-      return this.track('social', {
-        sn: network,
-        sa: action,
-        st: target
-      });
-    };
-
-
-    /**
-     * track exception
-    #
-     * @param {String} description - Specifies the description of an exception.
-     * @param {String} isFatal - true/false Specifies whether the exception was fatal.
-     * @return {Object}
-     */
-
-    tracker.prototype.trackException = function(description, isFatal) {
-      return this.track('exception', {
-        exf: isFatal ? 1 : 0,
-        exd: description
-      });
-    };
-
-
-    /**
-     * track app
-    #
-     * @param {String} name - *required* [MyApp] Specifies the application name.
-     * @param {String} id - *required* [com.company.app] Application identifier.
-     * @param {String} version - *required* [1.2] Specifies the application version.
-     * @param {String} installerid - *required* com.platform.vending
-     * @return {Object}
-     */
-
-    tracker.prototype.trackApp = function(name, id, version, installerid) {
-      return this.track('app', {
-        an: name,
-        aid: id,
-        av: version,
-        aiid: installer
-      });
-    };
-
-
-    /**
-     * track custom
-    #
-     * @param {Object} customDataObject - object with any property you want
-     * @return {Object}
-     */
-
-    tracker.prototype.trackCustom = function(customDataObject) {
-      return this.track('custom', customDataObject);
     };
 
     return tracker;
@@ -686,26 +582,24 @@
 2: [function(require, module, exports) {
 // Generated by CoffeeScript 1.9.2
 (function(win) {
-  var cacheBust, deferredObject, delay, dnt, doPostMessage, doc, handleMessageEvent, hash, iframe, load, lstore, mydeferred, myproxy, myq, onMessage, proxyPage, proxyWin, q, randomHash, store, usePostMessage, xstore;
+  var cacheBust, cookie, debug, delay, dnt, doc, load, log, maxStore, mydeferred, myproxy, myq, onMessage, q, randomHash, store, usePostMessage, xstore;
   doc = win.document;
+  debug = require('debug');
+  log = debug('xstore');
   load = require('load-iframe');
   store = require('store.js');
-  proxyPage = 'http://niiknow.github.io/xstore/xstore.html';
-  deferredObject = {};
-  iframe = void 0;
-  proxyWin = void 0;
+  cookie = require('cookie');
   usePostMessage = win.postMessage != null;
   cacheBust = 0;
-  hash = void 0;
   delay = 333;
-  lstore = {};
+  maxStore = 6000 * 60 * 24 * 777;
   myq = [];
   q = setInterval(function() {
     if (myq.length > 0) {
       return myq.shift()();
     }
   }, delay + 5);
-  dnt = win.navigator.doNotTrack || navigator.msDoNotTrack || win.doNotTrack;
+  dnt = win.navigator.doNotTrack || win.navigator.msDoNotTrack || win.doNotTrack;
   onMessage = function(fn) {
     if (win.addEventListener) {
       return win.addEventListener("message", fn, false);
@@ -723,27 +617,27 @@
 
     function mydeferred() {}
 
-    mydeferred.prototype.q = function(event, item) {
-      var d, deferredHash, self;
+    mydeferred.prototype.q = function(xs, event, item) {
+      var d, dh, self;
       self = this;
       self.mycallbacks = [];
       self.myerrorbacks = [];
-      deferredHash = randomHash();
-      d = [0, deferredHash, event, item.k, item.v];
-      deferredObject[deferredHash] = self;
+      dh = randomHash();
+      d = [0, dh, event, item.k, item.v];
+      xs.dob[dh] = self;
       if (usePostMessage) {
-        doPostMessage(JSON.stringify(d));
+        xs.doPostMessage(xs, JSON.stringify(d));
       } else {
-        if (iframe !== null) {
+        if (xs.iframe !== null) {
           cacheBust += 1;
           d[0] = +(new Date) + cacheBust;
-          hash = '#' + JSON.stringify(d);
-          if (iframe.src) {
-            iframe.src = "" + proxyPage + hash;
-          } else if ((iframe.contentWindow != null) && (iframe.contentWindow.location != null)) {
-            iframe.contentWindow.location = "" + proxyPage + hash;
+          xs.hash = '#' + JSON.stringify(d);
+          if (xs.iframe.src) {
+            xs.iframe.src = "" + proxyPage + xs.hash;
+          } else if ((xs.iframe.contentWindow != null) && (xs.iframe.contentWindow.location != null)) {
+            xs.iframe.contentWindow.location = "" + proxyPage + xs.hash;
           } else {
-            iframe.setAttribute('src', "" + proxyPage + hash);
+            xs.iframe.setAttribute('src', "" + proxyPage + xs.hash);
           }
         }
       }
@@ -800,8 +694,8 @@
         return setInterval((function() {
           var newhash;
           newhash = win.location.hash;
-          if (newhash !== hash) {
-            hash = newhash;
+          if (newhash !== xs.hash) {
+            xs.hash = newhash;
             self.handleProxyMessage({
               data: JSON.parse(newhash.substr(1))
             });
@@ -811,7 +705,7 @@
     };
 
     myproxy.prototype.handleProxyMessage = function(e) {
-      var d, id, key, method, myCacheBust, self;
+      var d, hash, id, key, method, myCacheBust, mystore, self;
       d = e.data;
       if (typeof d === "string") {
         if (/^xstore-/.test(d)) {
@@ -835,14 +729,42 @@
       key = d[3] || 'xstore';
       method = d[2];
       cacheBust = 0;
+      mystore = store;
+      if (!store.enabled) {
+        mystore = {
+          get: function(k) {
+            return cookie(key);
+          },
+          set: function(k, v) {
+            return cookie(k, v, {
+              maxage: maxStore
+            });
+          },
+          remove: function(k) {
+            return cookie(k, null);
+          },
+          clear: function() {
+            var cookies, i, idx, k, len, name, results, v;
+            cookies = doc.cookie.split(';');
+            results = [];
+            for (k = i = 0, len = cookies.length; i < len; k = ++i) {
+              v = cookies[k];
+              idx = v.indexOf('=');
+              name = idx > -1 ? v.substr(0, idx) : v;
+              results.push(doc.cookie = name + '=;expires=Thu, 01 Jan 1970 00:00:00 GMT');
+            }
+            return results;
+          }
+        };
+      }
       if (method === 'get') {
-        d[4] = store.get(key);
+        d[4] = mystore.get(key);
       } else if (method === 'set') {
-        store.set(key, d[4]);
+        mystore.set(key, d[4]);
       } else if (method === 'remove') {
-        store.remove(key);
+        mystore.remove(key);
       } else if (method === 'clear') {
-        store.clear();
+        mystore.clear();
       } else {
         d[2] = 'error-' + method;
       }
@@ -854,7 +776,7 @@
         myCacheBust = +(new Date) + cacheBust;
         d[0] = myCacheBust;
         hash = '#' + JSON.stringify(d);
-        win.location = win.location.href.replace(globals.location.hash, '') + hash;
+        win.location = win.location.href.replace(win.location.hash, '') + hash;
       }
     };
 
@@ -866,48 +788,6 @@
     rh = Math.random().toString(36).substr(2);
     return "xstore-" + rh;
   };
-  doPostMessage = function(msg) {
-    if ((proxyWin != null)) {
-      clearInterval(q);
-      proxyWin.postMessage(msg, '*');
-      return;
-    }
-    return myq.push(function() {
-      return doPostMessage(msg);
-    });
-  };
-  handleMessageEvent = function(e) {
-    var d, di, id;
-    d = e.data;
-    if (typeof d === "string") {
-      if (/^xstoreproxy-/.test(d)) {
-        d = d.split(",");
-      } else {
-        try {
-          d = JSON.parse(d);
-        } catch (_error) {
-          return;
-        }
-      }
-    }
-    if (!(d instanceof Array)) {
-      return;
-    }
-    id = d[1];
-    if (!/^xstoreproxy-/.test(id)) {
-      return;
-    }
-    id = id.replace('xstoreproxy-', 'xstore-');
-    di = deferredObject[id];
-    if (di) {
-      if (/^error-/.test(d[2])) {
-        di.myreject(d[2]);
-      } else {
-        di.myresolve(d[4]);
-      }
-      return delete deferredObject[id];
-    }
-  };
 
   /**
    * xstore class
@@ -918,16 +798,30 @@
 
     xstore.prototype.hasInit = false;
 
+    xstore.prototype.debug = debug;
+
+    xstore.prototype.proxyPage = '//niiknow.github.io/xstore/xstore.html';
+
+    xstore.prototype.iframe = null;
+
+    xstore.prototype.proxyWin = null;
+
+    xstore.prototype.hash = null;
+
+    xstore.prototype.tempStore = {};
+
+    xstore.prototype.dob = {};
+
     xstore.prototype.get = function(k) {
       this.init();
       if (dnt) {
         return {
           then: function(fn) {
-            return fn(lstore[k]);
+            return fn(self.tempStore[k]);
           }
         };
       }
-      return (new mydeferred()).q('get', {
+      return (new mydeferred()).q(this, 'get', {
         'k': k
       });
     };
@@ -937,12 +831,12 @@
       if (dnt) {
         return {
           then: function(fn) {
-            lstore[k] = v;
-            return fn(lstore[k]);
+            self.tempStore[k] = v;
+            return fn(self.tempStore[k]);
           }
         };
       }
-      return (new mydeferred()).q('set', {
+      return (new mydeferred()).q(this, 'set', {
         'k': k,
         'v': v
       });
@@ -953,12 +847,12 @@
       if (dnt) {
         return {
           then: function(fn) {
-            delete lstore[k];
+            delete self.tempStore[k];
             return fn;
           }
         };
       }
-      return (new mydeferred()).q('remove', {
+      return (new mydeferred()).q(this, 'remove', {
         'k': k
       });
     };
@@ -968,16 +862,60 @@
       if (dnt) {
         return {
           then: function(fn) {
-            lstore = {};
+            self.tempStore = {};
             return fn;
           }
         };
       }
-      return (new mydeferred()).q('clear');
+      return (new mydeferred()).q(this, 'clear');
+    };
+
+    xstore.prototype.doPostMessage = function(xs, msg) {
+      if ((xs.proxyWin != null)) {
+        clearInterval(q);
+        xs.proxyWin.postMessage(msg, '*');
+      }
+      return myq.push(function() {
+        return xs.doPostMessage(xs, msg);
+      });
+    };
+
+    xstore.prototype.handleMessageEvent = function(e) {
+      var d, di, id, self;
+      self = this;
+      d = e.data;
+      if (typeof d === "string") {
+        if (/^xstoreproxy-/.test(d)) {
+          d = d.split(",");
+        } else {
+          try {
+            d = JSON.parse(d);
+          } catch (_error) {
+            return;
+          }
+        }
+      }
+      if (!(d instanceof Array)) {
+        return;
+      }
+      id = d[1];
+      if (!/^xstoreproxy-/.test(id)) {
+        return;
+      }
+      id = id.replace('xstoreproxy-', 'xstore-');
+      di = self.dob[id];
+      if (di) {
+        if (/^error-/.test(d[2])) {
+          di.myreject(d[2]);
+        } else {
+          di.myresolve(d[4]);
+        }
+        return self.dob[id] = null;
+      }
     };
 
     xstore.prototype.init = function(options) {
-      var self;
+      var iframe, self;
       self = this;
       if (self.hasInit) {
         return self;
@@ -985,35 +923,34 @@
       self.hasInit = true;
       options = options || {};
       if (options.isProxy) {
+        log('init proxy');
         (new myproxy()).init();
-        return;
+        return self;
       }
-      proxyPage = options.url || proxyPage;
-      if (options.dntIgnore) {
+      self.proxyPage = options.url || self.proxyPage;
+      if (options.dntIgnore || typeof dnt === 'undefined' || dnt === 'unspecified' || dnt === 'no' || dnt === '0') {
+        log("disable dnt");
         dnt = false;
       }
-      if (!store.enabled) {
-        dnt = true;
-      }
-      if (win.location.protocol === 'https') {
-        proxyPage = proxyPage.replace('http:', 'https:');
-      }
-      return iframe = load(proxyPage, function() {
-        iframe.setAttribute("id", "xstore");
-        proxyWin = iframe.contentWindow;
+      log("init storeage dnt = " + dnt);
+      return iframe = load(self.proxyPage, function() {
+        log('iframe loaded');
+        self.proxyWin = iframe.contentWindow;
         if (!usePostMessage) {
-          hash = proxyWin.location.hash;
+          self.hash = proxyWin.location.hash;
           return setInterval((function() {
             if (proxyWin.location.hash !== hash) {
-              hash = proxyWin.location.hash;
-              handleMessageEvent({
+              self.hash = proxyWin.location.hash;
+              self.handleMessageEvent({
                 origin: proxyDomain,
-                data: hash.substr(1)
+                data: self.hash.substr(1)
               });
             }
           }), delay);
         } else {
-          return onMessage(handleMessageEvent);
+          return onMessage(function() {
+            return self.handleMessageEvent(arguments[0]);
+          });
         }
       });
     };
@@ -1021,683 +958,11 @@
     return xstore;
 
   })();
-  win.xstore = new xstore();
-  return module.exports = win.xstore;
+  return module.exports = xstore;
 })(window);
 
-}, {"load-iframe":11,"store.js":12}],
+}, {"debug":11,"load-iframe":12,"store.js":13,"cookie":4}],
 11: [function(require, module, exports) {
-
-/**
- * Module dependencies.
- */
-
-var onload = require('script-onload');
-var tick = require('next-tick');
-var type = require('type');
-
-/**
- * Expose `loadScript`.
- *
- * @param {Object} options
- * @param {Function} fn
- * @api public
- */
-
-module.exports = function loadIframe(options, fn){
-  if (!options) throw new Error('Cant load nothing...');
-
-  // Allow for the simplest case, just passing a `src` string.
-  if ('string' == type(options)) options = { src : options };
-
-  var https = document.location.protocol === 'https:' ||
-              document.location.protocol === 'chrome-extension:';
-
-  // If you use protocol relative URLs, third-party scripts like Google
-  // Analytics break when testing with `file:` so this fixes that.
-  if (options.src && options.src.indexOf('//') === 0) {
-    options.src = https ? 'https:' + options.src : 'http:' + options.src;
-  }
-
-  // Allow them to pass in different URLs depending on the protocol.
-  if (https && options.https) options.src = options.https;
-  else if (!https && options.http) options.src = options.http;
-
-  // Make the `<iframe>` element and insert it before the first iframe on the
-  // page, which is guaranteed to exist since this Javaiframe is running.
-  var iframe = document.createElement('iframe');
-  iframe.src = options.src;
-  iframe.width = options.width || 1;
-  iframe.height = options.height || 1;
-  iframe.style.display = 'none';
-
-  // If we have a fn, attach event handlers, even in IE. Based off of
-  // the Third-Party Javascript script loading example:
-  // https://github.com/thirdpartyjs/thirdpartyjs-code/blob/master/examples/templates/02/loading-files/index.html
-  if ('function' == type(fn)) {
-    onload(iframe, fn);
-  }
-
-  tick(function(){
-    // Append after event listeners are attached for IE.
-    var firstScript = document.getElementsByTagName('script')[0];
-    firstScript.parentNode.insertBefore(iframe, firstScript);
-  });
-
-  // Return the iframe element in case they want to do anything special, like
-  // give it an ID or attributes.
-  return iframe;
-};
-}, {"script-onload":13,"next-tick":14,"type":15}],
-13: [function(require, module, exports) {
-
-// https://github.com/thirdpartyjs/thirdpartyjs-code/blob/master/examples/templates/02/loading-files/index.html
-
-/**
- * Invoke `fn(err)` when the given `el` script loads.
- *
- * @param {Element} el
- * @param {Function} fn
- * @api public
- */
-
-module.exports = function(el, fn){
-  return el.addEventListener
-    ? add(el, fn)
-    : attach(el, fn);
-};
-
-/**
- * Add event listener to `el`, `fn()`.
- *
- * @param {Element} el
- * @param {Function} fn
- * @api private
- */
-
-function add(el, fn){
-  el.addEventListener('load', function(_, e){ fn(null, e); }, false);
-  el.addEventListener('error', function(e){
-    var err = new Error('script error "' + el.src + '"');
-    err.event = e;
-    fn(err);
-  }, false);
-}
-
-/**
- * Attach evnet.
- *
- * @param {Element} el
- * @param {Function} fn
- * @api private
- */
-
-function attach(el, fn){
-  el.attachEvent('onreadystatechange', function(e){
-    if (!/complete|loaded/.test(el.readyState)) return;
-    fn(null, e);
-  });
-  el.attachEvent('onerror', function(e){
-    var err = new Error('failed to load the script "' + el.src + '"');
-    err.event = e || window.event;
-    fn(err);
-  });
-}
-
-}, {}],
-14: [function(require, module, exports) {
-"use strict"
-
-if (typeof setImmediate == 'function') {
-  module.exports = function(f){ setImmediate(f) }
-}
-// legacy node.js
-else if (typeof process != 'undefined' && typeof process.nextTick == 'function') {
-  module.exports = process.nextTick
-}
-// fallback for other environments / postMessage behaves badly on IE8
-else if (typeof window == 'undefined' || window.ActiveXObject || !window.postMessage) {
-  module.exports = function(f){ setTimeout(f) };
-} else {
-  var q = [];
-
-  window.addEventListener('message', function(){
-    var i = 0;
-    while (i < q.length) {
-      try { q[i++](); }
-      catch (e) {
-        q = q.slice(i);
-        window.postMessage('tic!', '*');
-        throw e;
-      }
-    }
-    q.length = 0;
-  }, true);
-
-  module.exports = function(fn){
-    if (!q.length) window.postMessage('tic!', '*');
-    q.push(fn);
-  }
-}
-
-}, {}],
-15: [function(require, module, exports) {
-/**
- * toString ref.
- */
-
-var toString = Object.prototype.toString;
-
-/**
- * Return the type of `val`.
- *
- * @param {Mixed} val
- * @return {String}
- * @api public
- */
-
-module.exports = function(val){
-  switch (toString.call(val)) {
-    case '[object Date]': return 'date';
-    case '[object RegExp]': return 'regexp';
-    case '[object Arguments]': return 'arguments';
-    case '[object Array]': return 'array';
-    case '[object Error]': return 'error';
-  }
-
-  if (val === null) return 'null';
-  if (val === undefined) return 'undefined';
-  if (val !== val) return 'nan';
-  if (val && val.nodeType === 1) return 'element';
-
-  val = val.valueOf
-    ? val.valueOf()
-    : Object.prototype.valueOf.apply(val)
-
-  return typeof val;
-};
-
-}, {}],
-12: [function(require, module, exports) {
-;(function(win){
-	var store = {},
-		doc = win.document,
-		localStorageName = 'localStorage',
-		scriptTag = 'script',
-		storage
-
-	store.disabled = false
-	store.version = '1.3.17'
-	store.set = function(key, value) {}
-	store.get = function(key, defaultVal) {}
-	store.has = function(key) { return store.get(key) !== undefined }
-	store.remove = function(key) {}
-	store.clear = function() {}
-	store.transact = function(key, defaultVal, transactionFn) {
-		if (transactionFn == null) {
-			transactionFn = defaultVal
-			defaultVal = null
-		}
-		if (defaultVal == null) {
-			defaultVal = {}
-		}
-		var val = store.get(key, defaultVal)
-		transactionFn(val)
-		store.set(key, val)
-	}
-	store.getAll = function() {}
-	store.forEach = function() {}
-
-	store.serialize = function(value) {
-		return JSON.stringify(value)
-	}
-	store.deserialize = function(value) {
-		if (typeof value != 'string') { return undefined }
-		try { return JSON.parse(value) }
-		catch(e) { return value || undefined }
-	}
-
-	// Functions to encapsulate questionable FireFox 3.6.13 behavior
-	// when about.config::dom.storage.enabled === false
-	// See https://github.com/marcuswestin/store.js/issues#issue/13
-	function isLocalStorageNameSupported() {
-		try { return (localStorageName in win && win[localStorageName]) }
-		catch(err) { return false }
-	}
-
-	if (isLocalStorageNameSupported()) {
-		storage = win[localStorageName]
-		store.set = function(key, val) {
-			if (val === undefined) { return store.remove(key) }
-			storage.setItem(key, store.serialize(val))
-			return val
-		}
-		store.get = function(key, defaultVal) {
-			var val = store.deserialize(storage.getItem(key))
-			return (val === undefined ? defaultVal : val)
-		}
-		store.remove = function(key) { storage.removeItem(key) }
-		store.clear = function() { storage.clear() }
-		store.getAll = function() {
-			var ret = {}
-			store.forEach(function(key, val) {
-				ret[key] = val
-			})
-			return ret
-		}
-		store.forEach = function(callback) {
-			for (var i=0; i<storage.length; i++) {
-				var key = storage.key(i)
-				callback(key, store.get(key))
-			}
-		}
-	} else if (doc.documentElement.addBehavior) {
-		var storageOwner,
-			storageContainer
-		// Since #userData storage applies only to specific paths, we need to
-		// somehow link our data to a specific path.  We choose /favicon.ico
-		// as a pretty safe option, since all browsers already make a request to
-		// this URL anyway and being a 404 will not hurt us here.  We wrap an
-		// iframe pointing to the favicon in an ActiveXObject(htmlfile) object
-		// (see: http://msdn.microsoft.com/en-us/library/aa752574(v=VS.85).aspx)
-		// since the iframe access rules appear to allow direct access and
-		// manipulation of the document element, even for a 404 page.  This
-		// document can be used instead of the current document (which would
-		// have been limited to the current path) to perform #userData storage.
-		try {
-			storageContainer = new ActiveXObject('htmlfile')
-			storageContainer.open()
-			storageContainer.write('<'+scriptTag+'>document.w=window</'+scriptTag+'><iframe src="/favicon.ico"></iframe>')
-			storageContainer.close()
-			storageOwner = storageContainer.w.frames[0].document
-			storage = storageOwner.createElement('div')
-		} catch(e) {
-			// somehow ActiveXObject instantiation failed (perhaps some special
-			// security settings or otherwse), fall back to per-path storage
-			storage = doc.createElement('div')
-			storageOwner = doc.body
-		}
-		var withIEStorage = function(storeFunction) {
-			return function() {
-				var args = Array.prototype.slice.call(arguments, 0)
-				args.unshift(storage)
-				// See http://msdn.microsoft.com/en-us/library/ms531081(v=VS.85).aspx
-				// and http://msdn.microsoft.com/en-us/library/ms531424(v=VS.85).aspx
-				storageOwner.appendChild(storage)
-				storage.addBehavior('#default#userData')
-				storage.load(localStorageName)
-				var result = storeFunction.apply(store, args)
-				storageOwner.removeChild(storage)
-				return result
-			}
-		}
-
-		// In IE7, keys cannot start with a digit or contain certain chars.
-		// See https://github.com/marcuswestin/store.js/issues/40
-		// See https://github.com/marcuswestin/store.js/issues/83
-		var forbiddenCharsRegex = new RegExp("[!\"#$%&'()*+,/\\\\:;<=>?@[\\]^`{|}~]", "g")
-		function ieKeyFix(key) {
-			return key.replace(/^d/, '___$&').replace(forbiddenCharsRegex, '___')
-		}
-		store.set = withIEStorage(function(storage, key, val) {
-			key = ieKeyFix(key)
-			if (val === undefined) { return store.remove(key) }
-			storage.setAttribute(key, store.serialize(val))
-			storage.save(localStorageName)
-			return val
-		})
-		store.get = withIEStorage(function(storage, key, defaultVal) {
-			key = ieKeyFix(key)
-			var val = store.deserialize(storage.getAttribute(key))
-			return (val === undefined ? defaultVal : val)
-		})
-		store.remove = withIEStorage(function(storage, key) {
-			key = ieKeyFix(key)
-			storage.removeAttribute(key)
-			storage.save(localStorageName)
-		})
-		store.clear = withIEStorage(function(storage) {
-			var attributes = storage.XMLDocument.documentElement.attributes
-			storage.load(localStorageName)
-			for (var i=0, attr; attr=attributes[i]; i++) {
-				storage.removeAttribute(attr.name)
-			}
-			storage.save(localStorageName)
-		})
-		store.getAll = function(storage) {
-			var ret = {}
-			store.forEach(function(key, val) {
-				ret[key] = val
-			})
-			return ret
-		}
-		store.forEach = withIEStorage(function(storage, callback) {
-			var attributes = storage.XMLDocument.documentElement.attributes
-			for (var i=0, attr; attr=attributes[i]; ++i) {
-				callback(attr.name, store.deserialize(storage.getAttribute(attr.name)))
-			}
-		})
-	}
-
-	try {
-		var testKey = '__storejs__'
-		store.set(testKey, testKey)
-		if (store.get(testKey) != testKey) { store.disabled = true }
-		store.remove(testKey)
-	} catch(e) {
-		store.disabled = true
-	}
-	store.enabled = !store.disabled
-
-	if (typeof module != 'undefined' && module.exports && this.module !== module) { module.exports = store }
-	else if (typeof define === 'function' && define.amd) { define(store) }
-	else { win.store = store }
-
-})(Function('return this')());
-
-}, {}],
-3: [function(require, module, exports) {
-
-/**
- * Module dependencies.
- */
-
-var index = require('indexof');
-
-/**
- * Expose `Emitter`.
- */
-
-module.exports = Emitter;
-
-/**
- * Initialize a new `Emitter`.
- *
- * @api public
- */
-
-function Emitter(obj) {
-  if (obj) return mixin(obj);
-};
-
-/**
- * Mixin the emitter properties.
- *
- * @param {Object} obj
- * @return {Object}
- * @api private
- */
-
-function mixin(obj) {
-  for (var key in Emitter.prototype) {
-    obj[key] = Emitter.prototype[key];
-  }
-  return obj;
-}
-
-/**
- * Listen on the given `event` with `fn`.
- *
- * @param {String} event
- * @param {Function} fn
- * @return {Emitter}
- * @api public
- */
-
-Emitter.prototype.on =
-Emitter.prototype.addEventListener = function(event, fn){
-  this._callbacks = this._callbacks || {};
-  (this._callbacks[event] = this._callbacks[event] || [])
-    .push(fn);
-  return this;
-};
-
-/**
- * Adds an `event` listener that will be invoked a single
- * time then automatically removed.
- *
- * @param {String} event
- * @param {Function} fn
- * @return {Emitter}
- * @api public
- */
-
-Emitter.prototype.once = function(event, fn){
-  var self = this;
-  this._callbacks = this._callbacks || {};
-
-  function on() {
-    self.off(event, on);
-    fn.apply(this, arguments);
-  }
-
-  fn._off = on;
-  this.on(event, on);
-  return this;
-};
-
-/**
- * Remove the given callback for `event` or all
- * registered callbacks.
- *
- * @param {String} event
- * @param {Function} fn
- * @return {Emitter}
- * @api public
- */
-
-Emitter.prototype.off =
-Emitter.prototype.removeListener =
-Emitter.prototype.removeAllListeners =
-Emitter.prototype.removeEventListener = function(event, fn){
-  this._callbacks = this._callbacks || {};
-
-  // all
-  if (0 == arguments.length) {
-    this._callbacks = {};
-    return this;
-  }
-
-  // specific event
-  var callbacks = this._callbacks[event];
-  if (!callbacks) return this;
-
-  // remove all handlers
-  if (1 == arguments.length) {
-    delete this._callbacks[event];
-    return this;
-  }
-
-  // remove specific handler
-  var i = index(callbacks, fn._off || fn);
-  if (~i) callbacks.splice(i, 1);
-  return this;
-};
-
-/**
- * Emit `event` with the given args.
- *
- * @param {String} event
- * @param {Mixed} ...
- * @return {Emitter}
- */
-
-Emitter.prototype.emit = function(event){
-  this._callbacks = this._callbacks || {};
-  var args = [].slice.call(arguments, 1)
-    , callbacks = this._callbacks[event];
-
-  if (callbacks) {
-    callbacks = callbacks.slice(0);
-    for (var i = 0, len = callbacks.length; i < len; ++i) {
-      callbacks[i].apply(this, args);
-    }
-  }
-
-  return this;
-};
-
-/**
- * Return array of callbacks for `event`.
- *
- * @param {String} event
- * @return {Array}
- * @api public
- */
-
-Emitter.prototype.listeners = function(event){
-  this._callbacks = this._callbacks || {};
-  return this._callbacks[event] || [];
-};
-
-/**
- * Check if this emitter has `event` handlers.
- *
- * @param {String} event
- * @return {Boolean}
- * @api public
- */
-
-Emitter.prototype.hasListeners = function(event){
-  return !! this.listeners(event).length;
-};
-
-}, {"indexof":16}],
-16: [function(require, module, exports) {
-module.exports = function(arr, obj){
-  if (arr.indexOf) return arr.indexOf(obj);
-  for (var i = 0; i < arr.length; ++i) {
-    if (arr[i] === obj) return i;
-  }
-  return -1;
-};
-}, {}],
-4: [function(require, module, exports) {
-
-/**
- * Module dependencies.
- */
-
-var debug = require('debug')('cookie');
-
-/**
- * Set or get cookie `name` with `value` and `options` object.
- *
- * @param {String} name
- * @param {String} value
- * @param {Object} options
- * @return {Mixed}
- * @api public
- */
-
-module.exports = function(name, value, options){
-  switch (arguments.length) {
-    case 3:
-    case 2:
-      return set(name, value, options);
-    case 1:
-      return get(name);
-    default:
-      return all();
-  }
-};
-
-/**
- * Set cookie `name` to `value`.
- *
- * @param {String} name
- * @param {String} value
- * @param {Object} options
- * @api private
- */
-
-function set(name, value, options) {
-  options = options || {};
-  var str = encode(name) + '=' + encode(value);
-
-  if (null == value) options.maxage = -1;
-
-  if (options.maxage) {
-    options.expires = new Date(+new Date + options.maxage);
-  }
-
-  if (options.path) str += '; path=' + options.path;
-  if (options.domain) str += '; domain=' + options.domain;
-  if (options.expires) str += '; expires=' + options.expires.toUTCString();
-  if (options.secure) str += '; secure';
-
-  document.cookie = str;
-}
-
-/**
- * Return all cookies.
- *
- * @return {Object}
- * @api private
- */
-
-function all() {
-  return parse(document.cookie);
-}
-
-/**
- * Get cookie `name`.
- *
- * @param {String} name
- * @return {String}
- * @api private
- */
-
-function get(name) {
-  return all()[name];
-}
-
-/**
- * Parse cookie `str`.
- *
- * @param {String} str
- * @return {Object}
- * @api private
- */
-
-function parse(str) {
-  var obj = {};
-  var pairs = str.split(/ *; */);
-  var pair;
-  if ('' == pairs[0]) return obj;
-  for (var i = 0; i < pairs.length; ++i) {
-    pair = pairs[i].split('=');
-    obj[decode(pair[0])] = decode(pair[1]);
-  }
-  return obj;
-}
-
-/**
- * Encode.
- */
-
-function encode(value){
-  try {
-    return encodeURIComponent(value);
-  } catch (e) {
-    debug('error `encode(%o)` - %o', value, e)
-  }
-}
-
-/**
- * Decode.
- */
-
-function decode(value) {
-  try {
-    return decodeURIComponent(value);
-  } catch (e) {
-    debug('error `decode(%o)` - %o', value, e)
-  }
-}
-
-}, {"debug":17}],
-17: [function(require, module, exports) {
 
 /**
  * This is the web browser implementation of `debug()`.
@@ -1874,8 +1139,8 @@ function localstorage(){
   } catch (e) {}
 }
 
-}, {"./debug":18}],
-18: [function(require, module, exports) {
+}, {"./debug":14}],
+14: [function(require, module, exports) {
 
 /**
  * This is the common logic for both the Node.js and web browser
@@ -2074,8 +1339,8 @@ function coerce(val) {
   return val;
 }
 
-}, {"ms":19}],
-19: [function(require, module, exports) {
+}, {"ms":15}],
+15: [function(require, module, exports) {
 /**
  * Helpers.
  */
@@ -2201,6 +1466,677 @@ function plural(ms, n, name) {
 }
 
 }, {}],
+12: [function(require, module, exports) {
+
+/**
+ * Module dependencies.
+ */
+
+var onload = require('script-onload');
+var tick = require('next-tick');
+var type = require('type');
+
+/**
+ * Expose `loadScript`.
+ *
+ * @param {Object} options
+ * @param {Function} fn
+ * @api public
+ */
+
+module.exports = function loadIframe(options, fn){
+  if (!options) throw new Error('Cant load nothing...');
+
+  // Allow for the simplest case, just passing a `src` string.
+  if ('string' == type(options)) options = { src : options };
+
+  var https = document.location.protocol === 'https:' ||
+              document.location.protocol === 'chrome-extension:';
+
+  // If you use protocol relative URLs, third-party scripts like Google
+  // Analytics break when testing with `file:` so this fixes that.
+  if (options.src && options.src.indexOf('//') === 0) {
+    options.src = https ? 'https:' + options.src : 'http:' + options.src;
+  }
+
+  // Allow them to pass in different URLs depending on the protocol.
+  if (https && options.https) options.src = options.https;
+  else if (!https && options.http) options.src = options.http;
+
+  // Make the `<iframe>` element and insert it before the first iframe on the
+  // page, which is guaranteed to exist since this Javaiframe is running.
+  var iframe = document.createElement('iframe');
+  iframe.src = options.src;
+  iframe.width = options.width || 1;
+  iframe.height = options.height || 1;
+  iframe.style.display = 'none';
+
+  // If we have a fn, attach event handlers, even in IE. Based off of
+  // the Third-Party Javascript script loading example:
+  // https://github.com/thirdpartyjs/thirdpartyjs-code/blob/master/examples/templates/02/loading-files/index.html
+  if ('function' == type(fn)) {
+    onload(iframe, fn);
+  }
+
+  tick(function(){
+    // Append after event listeners are attached for IE.
+    var firstScript = document.getElementsByTagName('script')[0];
+    firstScript.parentNode.insertBefore(iframe, firstScript);
+  });
+
+  // Return the iframe element in case they want to do anything special, like
+  // give it an ID or attributes.
+  return iframe;
+};
+}, {"script-onload":16,"next-tick":17,"type":18}],
+16: [function(require, module, exports) {
+
+// https://github.com/thirdpartyjs/thirdpartyjs-code/blob/master/examples/templates/02/loading-files/index.html
+
+/**
+ * Invoke `fn(err)` when the given `el` script loads.
+ *
+ * @param {Element} el
+ * @param {Function} fn
+ * @api public
+ */
+
+module.exports = function(el, fn){
+  return el.addEventListener
+    ? add(el, fn)
+    : attach(el, fn);
+};
+
+/**
+ * Add event listener to `el`, `fn()`.
+ *
+ * @param {Element} el
+ * @param {Function} fn
+ * @api private
+ */
+
+function add(el, fn){
+  el.addEventListener('load', function(_, e){ fn(null, e); }, false);
+  el.addEventListener('error', function(e){
+    var err = new Error('script error "' + el.src + '"');
+    err.event = e;
+    fn(err);
+  }, false);
+}
+
+/**
+ * Attach evnet.
+ *
+ * @param {Element} el
+ * @param {Function} fn
+ * @api private
+ */
+
+function attach(el, fn){
+  el.attachEvent('onreadystatechange', function(e){
+    if (!/complete|loaded/.test(el.readyState)) return;
+    fn(null, e);
+  });
+  el.attachEvent('onerror', function(e){
+    var err = new Error('failed to load the script "' + el.src + '"');
+    err.event = e || window.event;
+    fn(err);
+  });
+}
+
+}, {}],
+17: [function(require, module, exports) {
+"use strict"
+
+if (typeof setImmediate == 'function') {
+  module.exports = function(f){ setImmediate(f) }
+}
+// legacy node.js
+else if (typeof process != 'undefined' && typeof process.nextTick == 'function') {
+  module.exports = process.nextTick
+}
+// fallback for other environments / postMessage behaves badly on IE8
+else if (typeof window == 'undefined' || window.ActiveXObject || !window.postMessage) {
+  module.exports = function(f){ setTimeout(f) };
+} else {
+  var q = [];
+
+  window.addEventListener('message', function(){
+    var i = 0;
+    while (i < q.length) {
+      try { q[i++](); }
+      catch (e) {
+        q = q.slice(i);
+        window.postMessage('tic!', '*');
+        throw e;
+      }
+    }
+    q.length = 0;
+  }, true);
+
+  module.exports = function(fn){
+    if (!q.length) window.postMessage('tic!', '*');
+    q.push(fn);
+  }
+}
+
+}, {}],
+18: [function(require, module, exports) {
+/**
+ * toString ref.
+ */
+
+var toString = Object.prototype.toString;
+
+/**
+ * Return the type of `val`.
+ *
+ * @param {Mixed} val
+ * @return {String}
+ * @api public
+ */
+
+module.exports = function(val){
+  switch (toString.call(val)) {
+    case '[object Date]': return 'date';
+    case '[object RegExp]': return 'regexp';
+    case '[object Arguments]': return 'arguments';
+    case '[object Array]': return 'array';
+    case '[object Error]': return 'error';
+  }
+
+  if (val === null) return 'null';
+  if (val === undefined) return 'undefined';
+  if (val !== val) return 'nan';
+  if (val && val.nodeType === 1) return 'element';
+
+  val = val.valueOf
+    ? val.valueOf()
+    : Object.prototype.valueOf.apply(val)
+
+  return typeof val;
+};
+
+}, {}],
+13: [function(require, module, exports) {
+;(function(win){
+	var store = {},
+		doc = win.document,
+		localStorageName = 'localStorage',
+		scriptTag = 'script',
+		storage
+
+	store.disabled = false
+	store.version = '1.3.17'
+	store.set = function(key, value) {}
+	store.get = function(key, defaultVal) {}
+	store.has = function(key) { return store.get(key) !== undefined }
+	store.remove = function(key) {}
+	store.clear = function() {}
+	store.transact = function(key, defaultVal, transactionFn) {
+		if (transactionFn == null) {
+			transactionFn = defaultVal
+			defaultVal = null
+		}
+		if (defaultVal == null) {
+			defaultVal = {}
+		}
+		var val = store.get(key, defaultVal)
+		transactionFn(val)
+		store.set(key, val)
+	}
+	store.getAll = function() {}
+	store.forEach = function() {}
+
+	store.serialize = function(value) {
+		return JSON.stringify(value)
+	}
+	store.deserialize = function(value) {
+		if (typeof value != 'string') { return undefined }
+		try { return JSON.parse(value) }
+		catch(e) { return value || undefined }
+	}
+
+	// Functions to encapsulate questionable FireFox 3.6.13 behavior
+	// when about.config::dom.storage.enabled === false
+	// See https://github.com/marcuswestin/store.js/issues#issue/13
+	function isLocalStorageNameSupported() {
+		try { return (localStorageName in win && win[localStorageName]) }
+		catch(err) { return false }
+	}
+
+	if (isLocalStorageNameSupported()) {
+		storage = win[localStorageName]
+		store.set = function(key, val) {
+			if (val === undefined) { return store.remove(key) }
+			storage.setItem(key, store.serialize(val))
+			return val
+		}
+		store.get = function(key, defaultVal) {
+			var val = store.deserialize(storage.getItem(key))
+			return (val === undefined ? defaultVal : val)
+		}
+		store.remove = function(key) { storage.removeItem(key) }
+		store.clear = function() { storage.clear() }
+		store.getAll = function() {
+			var ret = {}
+			store.forEach(function(key, val) {
+				ret[key] = val
+			})
+			return ret
+		}
+		store.forEach = function(callback) {
+			for (var i=0; i<storage.length; i++) {
+				var key = storage.key(i)
+				callback(key, store.get(key))
+			}
+		}
+	} else if (doc.documentElement.addBehavior) {
+		var storageOwner,
+			storageContainer
+		// Since #userData storage applies only to specific paths, we need to
+		// somehow link our data to a specific path.  We choose /favicon.ico
+		// as a pretty safe option, since all browsers already make a request to
+		// this URL anyway and being a 404 will not hurt us here.  We wrap an
+		// iframe pointing to the favicon in an ActiveXObject(htmlfile) object
+		// (see: http://msdn.microsoft.com/en-us/library/aa752574(v=VS.85).aspx)
+		// since the iframe access rules appear to allow direct access and
+		// manipulation of the document element, even for a 404 page.  This
+		// document can be used instead of the current document (which would
+		// have been limited to the current path) to perform #userData storage.
+		try {
+			storageContainer = new ActiveXObject('htmlfile')
+			storageContainer.open()
+			storageContainer.write('<'+scriptTag+'>document.w=window</'+scriptTag+'><iframe src="/favicon.ico"></iframe>')
+			storageContainer.close()
+			storageOwner = storageContainer.w.frames[0].document
+			storage = storageOwner.createElement('div')
+		} catch(e) {
+			// somehow ActiveXObject instantiation failed (perhaps some special
+			// security settings or otherwse), fall back to per-path storage
+			storage = doc.createElement('div')
+			storageOwner = doc.body
+		}
+		var withIEStorage = function(storeFunction) {
+			return function() {
+				var args = Array.prototype.slice.call(arguments, 0)
+				args.unshift(storage)
+				// See http://msdn.microsoft.com/en-us/library/ms531081(v=VS.85).aspx
+				// and http://msdn.microsoft.com/en-us/library/ms531424(v=VS.85).aspx
+				storageOwner.appendChild(storage)
+				storage.addBehavior('#default#userData')
+				storage.load(localStorageName)
+				var result = storeFunction.apply(store, args)
+				storageOwner.removeChild(storage)
+				return result
+			}
+		}
+
+		// In IE7, keys cannot start with a digit or contain certain chars.
+		// See https://github.com/marcuswestin/store.js/issues/40
+		// See https://github.com/marcuswestin/store.js/issues/83
+		var forbiddenCharsRegex = new RegExp("[!\"#$%&'()*+,/\\\\:;<=>?@[\\]^`{|}~]", "g")
+		function ieKeyFix(key) {
+			return key.replace(/^d/, '___$&').replace(forbiddenCharsRegex, '___')
+		}
+		store.set = withIEStorage(function(storage, key, val) {
+			key = ieKeyFix(key)
+			if (val === undefined) { return store.remove(key) }
+			storage.setAttribute(key, store.serialize(val))
+			storage.save(localStorageName)
+			return val
+		})
+		store.get = withIEStorage(function(storage, key, defaultVal) {
+			key = ieKeyFix(key)
+			var val = store.deserialize(storage.getAttribute(key))
+			return (val === undefined ? defaultVal : val)
+		})
+		store.remove = withIEStorage(function(storage, key) {
+			key = ieKeyFix(key)
+			storage.removeAttribute(key)
+			storage.save(localStorageName)
+		})
+		store.clear = withIEStorage(function(storage) {
+			var attributes = storage.XMLDocument.documentElement.attributes
+			storage.load(localStorageName)
+			for (var i=0, attr; attr=attributes[i]; i++) {
+				storage.removeAttribute(attr.name)
+			}
+			storage.save(localStorageName)
+		})
+		store.getAll = function(storage) {
+			var ret = {}
+			store.forEach(function(key, val) {
+				ret[key] = val
+			})
+			return ret
+		}
+		store.forEach = withIEStorage(function(storage, callback) {
+			var attributes = storage.XMLDocument.documentElement.attributes
+			for (var i=0, attr; attr=attributes[i]; ++i) {
+				callback(attr.name, store.deserialize(storage.getAttribute(attr.name)))
+			}
+		})
+	}
+
+	try {
+		var testKey = '__storejs__'
+		store.set(testKey, testKey)
+		if (store.get(testKey) != testKey) { store.disabled = true }
+		store.remove(testKey)
+	} catch(e) {
+		store.disabled = true
+	}
+	store.enabled = !store.disabled
+
+	if (typeof module != 'undefined' && module.exports && this.module !== module) { module.exports = store }
+	else if (typeof define === 'function' && define.amd) { define(store) }
+	else { win.store = store }
+
+})(Function('return this')());
+
+}, {}],
+4: [function(require, module, exports) {
+
+/**
+ * Module dependencies.
+ */
+
+var debug = require('debug')('cookie');
+
+/**
+ * Set or get cookie `name` with `value` and `options` object.
+ *
+ * @param {String} name
+ * @param {String} value
+ * @param {Object} options
+ * @return {Mixed}
+ * @api public
+ */
+
+module.exports = function(name, value, options){
+  switch (arguments.length) {
+    case 3:
+    case 2:
+      return set(name, value, options);
+    case 1:
+      return get(name);
+    default:
+      return all();
+  }
+};
+
+/**
+ * Set cookie `name` to `value`.
+ *
+ * @param {String} name
+ * @param {String} value
+ * @param {Object} options
+ * @api private
+ */
+
+function set(name, value, options) {
+  options = options || {};
+  var str = encode(name) + '=' + encode(value);
+
+  if (null == value) options.maxage = -1;
+
+  if (options.maxage) {
+    options.expires = new Date(+new Date + options.maxage);
+  }
+
+  if (options.path) str += '; path=' + options.path;
+  if (options.domain) str += '; domain=' + options.domain;
+  if (options.expires) str += '; expires=' + options.expires.toUTCString();
+  if (options.secure) str += '; secure';
+
+  document.cookie = str;
+}
+
+/**
+ * Return all cookies.
+ *
+ * @return {Object}
+ * @api private
+ */
+
+function all() {
+  return parse(document.cookie);
+}
+
+/**
+ * Get cookie `name`.
+ *
+ * @param {String} name
+ * @return {String}
+ * @api private
+ */
+
+function get(name) {
+  return all()[name];
+}
+
+/**
+ * Parse cookie `str`.
+ *
+ * @param {String} str
+ * @return {Object}
+ * @api private
+ */
+
+function parse(str) {
+  var obj = {};
+  var pairs = str.split(/ *; */);
+  var pair;
+  if ('' == pairs[0]) return obj;
+  for (var i = 0; i < pairs.length; ++i) {
+    pair = pairs[i].split('=');
+    obj[decode(pair[0])] = decode(pair[1]);
+  }
+  return obj;
+}
+
+/**
+ * Encode.
+ */
+
+function encode(value){
+  try {
+    return encodeURIComponent(value);
+  } catch (e) {
+    debug('error `encode(%o)` - %o', value, e)
+  }
+}
+
+/**
+ * Decode.
+ */
+
+function decode(value) {
+  try {
+    return decodeURIComponent(value);
+  } catch (e) {
+    debug('error `decode(%o)` - %o', value, e)
+  }
+}
+
+}, {"debug":11}],
+3: [function(require, module, exports) {
+
+/**
+ * Module dependencies.
+ */
+
+var index = require('indexof');
+
+/**
+ * Expose `Emitter`.
+ */
+
+module.exports = Emitter;
+
+/**
+ * Initialize a new `Emitter`.
+ *
+ * @api public
+ */
+
+function Emitter(obj) {
+  if (obj) return mixin(obj);
+};
+
+/**
+ * Mixin the emitter properties.
+ *
+ * @param {Object} obj
+ * @return {Object}
+ * @api private
+ */
+
+function mixin(obj) {
+  for (var key in Emitter.prototype) {
+    obj[key] = Emitter.prototype[key];
+  }
+  return obj;
+}
+
+/**
+ * Listen on the given `event` with `fn`.
+ *
+ * @param {String} event
+ * @param {Function} fn
+ * @return {Emitter}
+ * @api public
+ */
+
+Emitter.prototype.on =
+Emitter.prototype.addEventListener = function(event, fn){
+  this._callbacks = this._callbacks || {};
+  (this._callbacks[event] = this._callbacks[event] || [])
+    .push(fn);
+  return this;
+};
+
+/**
+ * Adds an `event` listener that will be invoked a single
+ * time then automatically removed.
+ *
+ * @param {String} event
+ * @param {Function} fn
+ * @return {Emitter}
+ * @api public
+ */
+
+Emitter.prototype.once = function(event, fn){
+  var self = this;
+  this._callbacks = this._callbacks || {};
+
+  function on() {
+    self.off(event, on);
+    fn.apply(this, arguments);
+  }
+
+  fn._off = on;
+  this.on(event, on);
+  return this;
+};
+
+/**
+ * Remove the given callback for `event` or all
+ * registered callbacks.
+ *
+ * @param {String} event
+ * @param {Function} fn
+ * @return {Emitter}
+ * @api public
+ */
+
+Emitter.prototype.off =
+Emitter.prototype.removeListener =
+Emitter.prototype.removeAllListeners =
+Emitter.prototype.removeEventListener = function(event, fn){
+  this._callbacks = this._callbacks || {};
+
+  // all
+  if (0 == arguments.length) {
+    this._callbacks = {};
+    return this;
+  }
+
+  // specific event
+  var callbacks = this._callbacks[event];
+  if (!callbacks) return this;
+
+  // remove all handlers
+  if (1 == arguments.length) {
+    delete this._callbacks[event];
+    return this;
+  }
+
+  // remove specific handler
+  var i = index(callbacks, fn._off || fn);
+  if (~i) callbacks.splice(i, 1);
+  return this;
+};
+
+/**
+ * Emit `event` with the given args.
+ *
+ * @param {String} event
+ * @param {Mixed} ...
+ * @return {Emitter}
+ */
+
+Emitter.prototype.emit = function(event){
+  this._callbacks = this._callbacks || {};
+  var args = [].slice.call(arguments, 1)
+    , callbacks = this._callbacks[event];
+
+  if (callbacks) {
+    callbacks = callbacks.slice(0);
+    for (var i = 0, len = callbacks.length; i < len; ++i) {
+      callbacks[i].apply(this, args);
+    }
+  }
+
+  return this;
+};
+
+/**
+ * Return array of callbacks for `event`.
+ *
+ * @param {String} event
+ * @return {Array}
+ * @api public
+ */
+
+Emitter.prototype.listeners = function(event){
+  this._callbacks = this._callbacks || {};
+  return this._callbacks[event] || [];
+};
+
+/**
+ * Check if this emitter has `event` handlers.
+ *
+ * @param {String} event
+ * @return {Boolean}
+ * @api public
+ */
+
+Emitter.prototype.hasListeners = function(event){
+  return !! this.listeners(event).length;
+};
+
+}, {"indexof":19}],
+19: [function(require, module, exports) {
+module.exports = function(arr, obj){
+  if (arr.indexOf) return arr.indexOf(obj);
+  for (var i = 0; i < arr.length; ++i) {
+    if (arr[i] === obj) return i;
+  }
+  return -1;
+};
+}, {}],
 5: [function(require, module, exports) {
 'use strict';
 
@@ -2305,7 +2241,7 @@ exports.stringify = function(obj){
   return pairs.join('&');
 };
 
-}, {"trim":20,"type":15}],
+}, {"trim":20,"type":18}],
 20: [function(require, module, exports) {
 
 exports = module.exports = trim;
@@ -2358,17 +2294,22 @@ module.exports = function uuid(a){
 }, {}],
 8: [function(require, module, exports) {
 // Generated by CoffeeScript 1.9.2
-(function(document, navigator, screen, location) {
+(function(win) {
   'use strict';
-  var $defaults, defaults, flashdetect, result, webanalyser;
+  var $df, $doc, $loc, $nav, $scr, $win, defaults, fd, result, webanalyser;
   defaults = require('defaults');
-  flashdetect = require('flashdetect');
-  $defaults = {
-    sr: screen.width + "x" + screen.height,
-    vp: screen.availWidth + "x" + screen.availHeight,
-    sd: screen.colorDepth,
-    je: navigator.javaEnabled ? navigator.javaEnabled() : false,
-    ul: navigator.languages ? navigator.languages[0] : navigator.language || navigator.userLanguage || navigator.browserLanguage
+  fd = require('flashdetect');
+  $win = win;
+  $doc = $win.document;
+  $nav = $win.navigator;
+  $scr = $win.screen;
+  $loc = $win.location;
+  $df = {
+    sr: $scr.width + "x" + $scr.height,
+    vp: $scr.availWidth + "x" + $scr.availHeight,
+    sd: $scr.colorDepth,
+    je: $nav.javaEnabled ? ($nav.javaEnabled() ? 1 : 0) : 0,
+    ul: $nav.languages ? $nav.languages[0] : $nav.language || $nav.userLanguage || $nav.browserLanguage
   };
 
   /**
@@ -2377,22 +2318,41 @@ module.exports = function uuid(a){
   webanalyser = (function() {
     function webanalyser() {}
 
-    webanalyser.prototype.getResult = function() {
+    webanalyser.prototype.get = function() {
       var rst;
-      if (defaults.z == null) {
+      if ($df.z == null) {
         rst = {
-          dr: document.referrer,
-          dh: location.hostname,
+          dr: $doc.referrer,
+          dh: $loc.hostname,
           z: new Date().getTime()
         };
-        if (flashdetect.installed) {
-          rst.fl = flashdetect.major + " " + flashdetect.minor + " " + flashdetect.revisionStr;
+        if (fd.installed) {
+          rst.fl = fd.major + " " + fd.minor + " " + fd.revisionStr;
         }
-        $defaults = defaults(rst, $defaults);
+        $df = defaults(rst, $df);
       }
-      $defaults.dl = location.href;
-      $defaults.dt = document.title;
-      return $defaults;
+      $df.dl = $loc.href;
+      $df.dt = $doc.title;
+      return $df;
+    };
+
+    webanalyser.prototype.windowSize = function() {
+      var rst;
+      rst = {
+        w: 0,
+        h: 0
+      };
+      if (typeof $win.innerWidth === 'number') {
+        rst.w = $win.innerWidth;
+        rst.h = $win.innerHeight;
+      } else if ($doc.documentElement && ($doc.documentElement.clientWidth || $doc.documentElement.clientHeight)) {
+        rst.w = $doc.documentElement.clientWidth;
+        rst.h = $doc.documentElement.clientHeight;
+      } else if ($doc.body && ($doc.body.clientWidth || $doc.body.clientHeight)) {
+        rst.w = $doc.body.clientWidth;
+        rst.h = $doc.body.clientHeight;
+      }
+      return rst;
     };
 
     return webanalyser;
@@ -2400,7 +2360,7 @@ module.exports = function uuid(a){
   })();
   result = new webanalyser();
   return module.exports = result;
-})(document, navigator, screen, location);
+})(window);
 
 }, {"defaults":5,"flashdetect":21}],
 21: [function(require, module, exports) {

@@ -5,7 +5,7 @@
 
 PORT ?= 0
 BROWSER ?= ie:9
-TESTS = $(wildcard test/*.js)
+TESTS = $(wildcard test/*.coffee)
 SRC = $(wildcard src/*.coffee)
 MINIFY = $(BINS)/uglifyjs
 PID = test/server/pid.txt
@@ -13,12 +13,14 @@ BINS = node_modules/.bin
 BUILD = build.js
 DUO = $(BINS)/duo
 DUOT = $(BINS)/duo-test -p test/server -R spec -P $(PORT) -c "make build.js"
+COFFEE = bin/coffee --js --bare
 
 #
 # Default target.
 #
 
-default: trakless
+default: build
+default: trakless.js
 default: lib/index.js
 
 #
@@ -69,7 +71,7 @@ test-browser: $(BUILD)
 # Target for `trakless.js` file.
 #
 
-trakless: node_modules $(SRC)
+trakless.js: node_modules $(SRC)
 	@$(DUO) --use duo-coffee src/index.coffee > trakless.js
 	@$(MINIFY) trakless.js --output trakless.min.js
 
@@ -86,18 +88,19 @@ lib/%.js: node_modules $(SRC)
 
 node_modules: package.json
 	@npm install
+	@touch $@
 
 #
 # Target for build files.
 #
 
-$(BUILD): $(TESTS) trakless.js
-	@$(DUO) --development test/tests.js > $(BUILD)
+$(BUILD): node_modules $(TESTS) src/index.coffee
+	@$(DUO) --development --use duo-coffee test/tests.coffee > $(BUILD)
 
 #
 # Phony build target
 #
 
-build: build.js
+build: $(BUILD)
 
 .PHONY: build
