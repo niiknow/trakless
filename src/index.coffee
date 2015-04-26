@@ -62,6 +62,21 @@ getImage = (cfgUrl, tks, qs, callback) ->
     return image 
 
 ###*
+ * determine if a object is dom
+ * @param  {Object}  obj the object
+ * @return {Boolean}     true or false
+###
+isDom = (obj) ->
+  if (obj?)
+    if obj.nodeName
+      switch obj.nodeType
+        when 1
+          return true
+        when 3
+          return object.nodeValue?
+  return false
+
+###*
 #  util
 ###
 class util
@@ -178,7 +193,7 @@ class tracker
       for k, v of data when v?
         if !(typeof v is "string") or (myutil.trim(v).length > 0)
           # ignore uuid and z
-          if ((k + '') != 'undefined' and k != 'uuid' and k != 'z')
+          if ((k + '') != 'undefined' and k != 'uuid' and k != 'z' and !isDom(v))
             if (typeof v is 'boollean')
               v = if v then 1 else 0
             myData[k] = v

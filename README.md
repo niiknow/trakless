@@ -4,30 +4,99 @@ Less is more.  Trakless, similar to snowplow, is a client-side scripting engine 
 Trakless is not a full blown analytic.  We have no plan, in this project, to supporting anything outside of a pixel, which has limitation of 2048 characters length on older IE.  If you need more than the basic, we recommend using snowplow, clicky, segmentio, or some other analytics.
 
 # API
-## trackless#setSiteId(siteId)
+## trakless/_tk
+These are the two global objects available.  _tk is a short-cut so you don't have to worry about misspelling trakless vs trackless.
+
+## _tk#setSiteId(siteId)
 trakless require that you must have a numerical siteId for site segmentation
 
-## trackless#setPixel(pixelUrl)
+## _tk#setPixel(pixelUrl)
 Unless you are testing, you should also set to your pixel URL on either Amazon CloudFront/S3/MaxCDN.
 
-## trakless#getDefaultTracker
+## _tk#getDefaultTracker
 get default tracker
 
-## trakless#getTracker(siteId, pixelUrl)
+## _tk#getTracker(siteId, pixelUrl)
 Trakless allow you to have multiple tracker, each with it's own pixel.
 
-## trakless#track(hitType, dataObj)
-hitType - a string determine the hit type
-dataObj - the extra data to pass along with trakless
+## _tk#track(hitType, context)
+hitType - a string determine the hit/tracking type
+context - the extra data to pass along with trakless
 
-## trakless#pageview(context)
+## _tk#pageview(context)
 track page view, trakless automatically gather some basic data about the page
 context - additonal context/parameter
 
-## trakless#event(category, action, label, property, value)
+## _tk#event(category, action, label, property, value)
 track an event
 
 That is all.  Trackless uses localStorage to store all it's tracking for data integrity and performance.
+
+# Extensibility
+Out of the box, trackless provide basic/core tracking functions (event, pageview, or track anything) defined in this google analytic document: https://developers.google.com/analytics/devguides/collection/protocol/v1/parameters
+
+## Tracking Type/Schema/Hit Type
+trakless.track method allow you to provide custom tracking type.  This is also known as *schema* or *hit type*.  Example:
+
+```
+  trakless.track('register', { firstname: '', lastname: '', address: '', city: '', state: '', country: '', subemail: 1, subsms: 1 });
+
+  trakless.track('cart-item', {orderid: 123, sku: '', name: '', category: '', brand: '', price: '', quantity: '' });
+
+  // you decide, maybe shopping list item only differ by orderid or listid
+  trakless.track('list-item', {listid: 234, sku: '', name: '', category: '', brand: '', price: '', quantity: '' });
+```
+
+You determine the schema.  
+
+Note: In future relase, we may provide some common schema definition to help create a consistent backend reporting code.  It will most likely be a by-product of backend reporting.
+
+## Plugin
+To support plugin, trakless utilize event emitter component mixin @ https://github.com/component/emitter
+
+To provide maximum flexibility, trackless emit two events: track and tracked.  
+
+### on('track', fn(item))
+item.ht - the hit type
+item.ctx - the context object
+
+One common way to write plugin is to intercept this event and change the context object.  This is how we intercept pageview in trakless and inject some pageview defaults as seen in example below.
+```
+# plugin example in coffeescript
+trakless.on 'track', (item) ->
+  if (item.ht is 'pageview')
+    myDef = webanalyser.get()
+    item.ctx = defaults(item.ctx, myDef) 
+```
+
+### on('tracked', fn(item))
+This allow you to do things after an event has passed.  for now, we don't know how this would be useful but maybe closing an alert, perhap?
+
+With some creativity, combine 'track' method and on 'track' event should give you the full flexibility of writing any kind of plugin you desired.
+
+Example:
+```
+  // use jquery to live detect all anchor click
+  $(document.body).on('click', 'a', function(evt){
+    el = evt.target;
+    _tk.track('link', {el: el, href: el.href, id: el.id, cls: el.className, target: el.target});
+  });
+```
+
+As seen above, you can pass a dom object into the context method.  As a default, trackless will just ignore it but you later intercept the 'track' event as follow:
+
+```
+  _tk.on('track', function(item){
+    if (item.ht != 'link') return;
+    
+    if (item.el) {
+      item.content = $(item.el).html();
+      item.value = $(item.el).val();
+    }
+  });
+```
+
+The example above show that you can intercept any plugin and provide additional context for tracking.
 
 # backend pixel service
 Pixel tracking is the most common tracking method.  Trakless require a backend web service that return a transparent pixels.

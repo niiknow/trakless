@@ -84,7 +84,7 @@
 })({
 1: [function(require, module, exports) {
 (function() {
-  var $defaults, $pixel, $sessionid, $siteid, $st, $trakless2, Emitter, attrs, cookie, debounce, defaults, doc, docReady, fn, getImage, hasNOL, i, j, k, len, len1, lsqueue, mystore, mytrakless, myutil, prefix, query, queue, ref, ref1, script, session, tracker, trakless, traklessParent, util, uuid, webanalyser, win, xstore;
+  var $defaults, $pixel, $sessionid, $siteid, $st, $trakless2, Emitter, attrs, cookie, debounce, defaults, doc, docReady, fn, getImage, hasNOL, i, isDom, j, k, len, len1, lsqueue, mystore, mytrakless, myutil, prefix, query, queue, ref, ref1, script, session, tracker, trakless, traklessParent, util, uuid, webanalyser, win, xstore;
 
   mystore = require('xstore');
 
@@ -174,6 +174,27 @@
     url = cfgUrl + (cfgUrl.indexOf('?') < 0 ? '?' : '&') + (tks + "&" + qs);
     image.src = url;
     return image;
+  };
+
+
+  /**
+   * determine if a object is dom
+   * @param  {Object}  obj the object
+   * @return {Boolean}     true or false
+   */
+
+  isDom = function(obj) {
+    if ((obj != null)) {
+      if (obj.nodeName) {
+        switch (obj.nodeType) {
+          case 1:
+            return true;
+          case 3:
+            return object.nodeValue != null;
+        }
+      }
+    }
+    return false;
   };
 
 
@@ -342,7 +363,7 @@
         v = data[k];
         if (v != null) {
           if (!(typeof v === "string") || (myutil.trim(v).length > 0)) {
-            if ((k + '') !== 'undefined' && k !== 'uuid' && k !== 'z') {
+            if ((k + '') !== 'undefined' && k !== 'uuid' && k !== 'z' && !isDom(v)) {
               if (typeof v === 'boollean') {
                 v = v ? 1 : 0;
               }
