@@ -13,6 +13,7 @@ queue = new lsqueue('tksq')
 
 win = window
 doc = win.document
+hasNOL = win.navigator.onLine
 session = win.sessionStorage
 $siteid = 0
 $pixel = '//niiknow.github.io/pixel.gif'
@@ -271,12 +272,15 @@ class mytrakless
     self = @
     self._track = debounce ->
       self = @
-      item = queue.pop()
-      if (item?)
-        self.emit('track', item)    
-        for k, v of self.trackers
-          v.track(item.ht, item.ctx)   
-        self.emit('tracked', item)       
+
+      # only track if we can detect onLine or is onLine
+      if (!hasNOL or win.navigator.onLine)
+        item = queue.pop()
+        if (item?)
+          self.emit('track', item)    
+          for k, v of self.trackers
+            v.track(item.ht, item.ctx)   
+          self.emit('tracked', item)       
     , 222
 
     return self

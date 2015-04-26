@@ -84,7 +84,7 @@
 })({
 1: [function(require, module, exports) {
 (function() {
-  var $defaults, $pixel, $sessionid, $siteid, $st, $trakless2, Emitter, attrs, cookie, debounce, defaults, doc, docReady, fn, getImage, i, j, k, len, len1, lsqueue, mystore, mytrakless, myutil, prefix, query, queue, ref, ref1, script, session, tracker, trakless, traklessParent, util, uuid, webanalyser, win, xstore;
+  var $defaults, $pixel, $sessionid, $siteid, $st, $trakless2, Emitter, attrs, cookie, debounce, defaults, doc, docReady, fn, getImage, hasNOL, i, j, k, len, len1, lsqueue, mystore, mytrakless, myutil, prefix, query, queue, ref, ref1, script, session, tracker, trakless, traklessParent, util, uuid, webanalyser, win, xstore;
 
   mystore = require('xstore');
 
@@ -113,6 +113,8 @@
   win = window;
 
   doc = win.document;
+
+  hasNOL = win.navigator.onLine;
 
   session = win.sessionStorage;
 
@@ -468,15 +470,17 @@
       self._track = debounce(function() {
         var item, k, ref, v;
         self = this;
-        item = queue.pop();
-        if ((item != null)) {
-          self.emit('track', item);
-          ref = self.trackers;
-          for (k in ref) {
-            v = ref[k];
-            v.track(item.ht, item.ctx);
+        if (!hasNOL || win.navigator.onLine) {
+          item = queue.pop();
+          if ((item != null)) {
+            self.emit('track', item);
+            ref = self.trackers;
+            for (k in ref) {
+              v = ref[k];
+              v.track(item.ht, item.ctx);
+            }
+            return self.emit('tracked', item);
           }
-          return self.emit('tracked', item);
         }
       }, 222);
       return self;
