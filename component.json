@@ -11,12 +11,13 @@
   "dependencies": {
     "avetisk/defaults": "0.0.4",
     "desandro/doc-ready": "*",
-    "component/json-fallback": "*",
+    "component/debounce": "*",
     "component/cookie": "1.1.1",
     "component/emitter": "1.1.0",
     "component/querystring": "1.3.0",
     "gjohnson/uuid": "0.0.1",
     "niiknow/xstore": "*",
+    "niiknow/lsqueue": "*",
     "niiknow/webanalyser": "*"
   },
   "development": {

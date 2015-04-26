@@ -7,7 +7,9 @@ query = require('querystring')
 uuid = require('uuid')
 webanalyser = require('webanalyser')
 docReady = require('doc-ready')
-json = require('json-fallback')
+debounce = require('debounce')
+lsqueue = require('lsqueue')
+queue = new lsqueue('tksq')
 
 win = window
 doc = win.document
@@ -17,7 +19,7 @@ $siteid = 0
 $pixel = '/pixel.gif'
 xs = 
 # start time january 2014
-$st = 1388534400000
+$st = new Date().getTime()
 
 $defaults = null
 if(typeof(session) is 'undefined')
@@ -30,7 +32,7 @@ if(typeof(session) is 'undefined')
 $sessionid = session.getItem('tksuid')
 if !$sessionid?
   # get time since january 2014
-  $sessionid = new Date().getTime() - $st
+  $sessionid = new Date().getTime() - 1420092000000
   session.setItem('tksuid', $sessionid)
 
 ###*
@@ -50,6 +52,12 @@ getImage = (cfgUrl, tks, qs, callback) ->
     url = cfgUrl + (if cfgUrl.indexOf('?') < 0 then '?' else '&') + "#{tks}&#{qs}"
     image.src = url
     return image 
+
+processQueue = debounce ->
+  item = queue.pop()
+  if (item?)
+    getImage(item.pixel, item.tkd, item.myData, processQueue)
+, 222
 
 ###*
 #  util
@@ -82,7 +90,7 @@ class util
   parseJSON: (v) ->
     if (typeof v is "string")
       if (v.indexOf('{') >= 0 or v.indexOf('[') >= 0)
-        v2 = json.parse(v)
+        v2 = JSON.parse(v)
         return v2 unless !v2?
 
     return v
@@ -97,7 +105,7 @@ class util
     if (typeof v is "string")
       return v
 
-    return json.stringify(v)
+    return JSON.stringify(v)
 
   ###*
   # get or set session data - store in cookie
@@ -151,7 +159,7 @@ class tracker
     siteid: 0
     store: null
     uuid: null
-    _trackit: (myData, ht, pixel) ->
+    _tk: (myData, ht, pixel) ->
       self = @
       tkd = 
         uuid: self.uuid
@@ -160,8 +168,13 @@ class tracker
         ht: ht
         z: new Date().getTime() - $st
 
-      getImage(pixel, query.stringify(tkd), query.stringify(myData))
-      self.emit('track', myData.ht, myData)
+      queue.push
+        pixel: pixel
+        tkd: query.stringify(tkd)
+        myData: query.stringify(myData)
+
+      processQueue()
+      self.emit('track', tkd.ht, tkd, myData)
       return self
 
     _track: (ht, extra) ->
@@ -197,9 +210,9 @@ class tracker
               if !id 
                 self.store.set('trakless-uuid', self.uuid)
               self.uuid = id or self.uuid
-              self._trackit(myData, ht, pixel)
+              self._tk(myData, ht, pixel)
         else
-          self._trackit(myData, ht, pixel)
+          self._tk(myData, ht, pixel)
       @ # chaining
 
     ###*
@@ -231,6 +244,7 @@ class tracker
     # @param {String} category
     # @param {String} action
     # @param {String} label
+    # @param {String} property
     # @param {String} value - Values must be non-negative.
     # @return {Object}
     ###
