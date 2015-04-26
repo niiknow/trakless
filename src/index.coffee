@@ -422,6 +422,19 @@ class mytrakless
     self._track()
     return self
 
+  ###*
+   * For situation when trakless is in an iframe, you can use this method
+   * to emit event to the parent.
+   * @param  {string} en event name
+   * @param  {string} ed event detail
+   * @return {object}    trakless
+  ###
+  emitTop: (en, ed) ->
+    # trigger only if $trakless2 has been initialized
+    if $trakless2?
+      $trakless2.emit(en, ed)
+    @
+
 
 # initialize $trakless2 to allow event pass to anybody listening on the parent
 trakless = new mytrakless

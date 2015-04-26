@@ -660,6 +660,22 @@
       return self;
     };
 
+
+    /**
+     * For situation when trakless is in an iframe, you can use this method
+     * to emit event to the parent.
+     * @param  {string} en event name
+     * @param  {string} ed event detail
+     * @return {object}    trakless
+     */
+
+    mytrakless.prototype.emitTop = function(en, ed) {
+      if (typeof $trakless2 !== "undefined" && $trakless2 !== null) {
+        $trakless2.emit(en, ed);
+      }
+      return this;
+    };
+
     return mytrakless;
 
   })();
