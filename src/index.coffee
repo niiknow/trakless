@@ -159,6 +159,12 @@ class util
   ready: docReady
 
   ###*
+   * Emitter
+   * 
+  ###
+  Emitter: Emitter
+
+  ###*
   # trim
   #
   ###
