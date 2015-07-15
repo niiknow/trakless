@@ -1,4 +1,3 @@
-
 #
 # Task args.
 #
@@ -46,7 +45,7 @@ test: $(BUILD)
 test-sauce: $(BUILD)
 	@$(DUOT) saucelabs \
 		--browsers $(BROWSER) \
-		--title trakless.js
+		--title trakless
 
 #
 # Test in the browser.
@@ -79,9 +78,10 @@ trakless.js: node_modules $(SRC)
 # Target for `*.js` file.
 #
 
+
 lib/%.js: node_modules $(SRC)
 	node_modules/coffee-script/bin/coffee --bare -c -o $(@D) $(patsubst lib/%,src/%,$(patsubst %.js,%.coffee,$@))
-
+#
 #
 # Target for `node_modules` folder.
 #
