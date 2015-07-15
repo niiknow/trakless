@@ -1,7 +1,7 @@
 {
   "name": "trakless",
   "author": "tom nguyen <tom@noogen.net>",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "license": "MIT",
   "description": "Pixel tracking analytics.",
   "keywords": [

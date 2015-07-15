@@ -379,17 +379,22 @@ class mytrakless
    * @param  {string} value
    * @return {object}
   ###
-  event: (category, action, label, property, value) ->
-   if (value and value < 0)
-      value = null
+  event: (category, action, label, property, value, extra) ->
+    extra = extra || {}
+    if (!isNaN(parseInt(value)))
+      extra.ev = value
 
-    @track('event', {
-      ec: category || 'event'
-      ea: action
-      el: label
-      ep: property
-      ev: value
-    })
+    extra.ec = category || 'event'
+    if (action)
+      extra.ea = action
+
+    if (label)
+      extra.el = label
+
+    if (property)
+      extra.ep = property
+
+    @track('event', extra)
 
   ###*
    * track page view
