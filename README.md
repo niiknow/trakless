@@ -1,7 +1,11 @@
 # trakless
 Less is more.  Trakless, similar to snowplow, is a client-side scripting engine that aim to provide simple analytic tracking through the use of a pixel.
 
-Trakless is not a full blown analytic.  We have no plan, in this project, to supporting anything outside of a pixel, which has limitation of 2048 characters length on older IE.  If you need more than the basic, we recommend using snowplow, clicky, segmentio, or some other analytics.
+Trakless is simple.  You provide a pixel url and it will send all data to that url by query string.  You can have a back-end service that parse this query string and send it to your analytic for live analytic.
+
+You can also enable logging with your favorite HTTP server (nginx, iis, apache, etc..) to be process at a later time with logstash + eleasticsearch.  Even simpler is to put it on Amazon s3 and setup automatic request logging.
+
+Trakless is not a full blown analytic.  We have no plan, in this project, to supporting anything outside of doing a GET pixel/URL, which has limitation of 2048 characters length on older IE.  If you need more than the basic, we recommend using snowplow, clicky, segmentio, or some other analytics.
 
 # API
 ## trakless/_tk
@@ -112,8 +116,6 @@ We recommend that you store all your log on a daily basis into Amazon s3 and set
 3. Import the log into your favorite SQL engine for analytic.
 
 # side project/repository/goals (coming soon...)
-1. trakless plugin for extra data and automatic data collection
+1. trakless tag management through github - dynamically load tag by referencing some remote github repository
 2. Android Tracking SDK
 3. iOS Tracking SDK
-4. A docker setup of nginx with tracking pixel and logging.
-5. A set of script that can auto create your EC2 environment and automatically backup your data to s3.
