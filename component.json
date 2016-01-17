@@ -3,23 +3,24 @@
   "main": "lib/index.js",
   "repo": "niiknow/trakless",
   "description": "Pixel tracking analytic.",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "keywords": [
     "analytic",
     "pixel",
     "tracking"
   ],
   "dependencies": {
-    "avetisk/defaults": "0.0.4",
-    "desandro/doc-ready": "*",
-    "component/debounce": "*",
     "component/cookie": "1.1.1",
+    "component/debounce": "1.0.0",
+    "component/delegate": "0.2.3",
     "component/emitter": "1.1.0",
     "component/querystring": "1.3.0",
-    "gjohnson/uuid": "0.0.1",
-    "niiknow/xstore": "*",
+    "niiknow/defaults": "1.0.0",
+    "niiknow/domready": "v0.3.0",
     "niiknow/lsqueue": "*",
-    "niiknow/webanalyser": "*"
+    "niiknow/uuid": "0.0.1",
+    "niiknow/webanalyser": "*",
+    "niiknow/xstore": "*"
   },
   "development": {
     "yields/coverage": "*",

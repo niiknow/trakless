@@ -6,11 +6,12 @@ defaults = require('defaults')
 query = require('querystring')
 uuid = require('uuid')
 webanalyser = require('webanalyser')
-docReady = require('doc-ready')
+docReady = require('domready')
 debounce = require('debounce')
 lsqueue = require('lsqueue')
-queue = new lsqueue('tksq')
+domdelegate = require('delegate')
 
+queue = new lsqueue('tksq')
 win = window
 doc = win.document
 hasNOL = win.navigator.onLine
@@ -137,10 +138,10 @@ class util
     if (v?)
       if !(typeof v is "string")
         v = @stringify(v)
-      cookie('tls:'+k, v, { path: '/' })
+      cookie('tls_'+k, v, { path: '/' })
       return v
 
-    v = cookie('tls:'+k)
+    v = cookie('tls_'+k)
     if (typeof v is 'undefined')
       return v
     # attempt to parse the result from cookie
@@ -170,6 +171,25 @@ class util
   ###
   trim: (v) ->
     return v.replace(/^\s+|\s+$/gm,'')
+
+  ###*
+  # event handling
+  #
+  ###
+  listen: domdelegate
+
+  ###*
+  # debounce
+  #
+  ###
+  debounce: debounce
+
+  ###*
+  # local storage queue
+  #
+  ###
+  lsqueue: (name) =>
+    return new lsqueue(name or 'tkdefault')
 
 myutil = new util()
 
