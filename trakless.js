@@ -453,6 +453,7 @@
               return self._tk(ctx, ht, pixel);
             });
           }
+          session.setItem('tklsuid', $uuid);
         } else {
           self._tk(ctx, ht, pixel);
         }

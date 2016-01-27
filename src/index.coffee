@@ -254,6 +254,8 @@ class tracker
               self.uuid = id or self.uuid
               $uuid = self.uuid
               self._tk(ctx, ht, pixel)
+
+          session.setItem('tklsuid', $uuid)
         else
           self._tk(ctx, ht, pixel)
       @ # chaining
