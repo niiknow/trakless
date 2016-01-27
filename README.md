@@ -10,7 +10,7 @@ Trakless is not a full blown analytic.  We have no plan, in this project, to sup
 These are the two global objects available, trackless and _tk.  _tk is a short-cut so you don't have to worry about misspelling trakless vs. trackless.
 
 ## _tk#setSiteId(siteId)
-trakless support multitenancy out of the box which require a siteId integer for site segmentation.  This is accomplish by initializing trakless with _tk.setSiteId(siteId).  You can also provide site id through script reference.
+trakless support multitenancy out of the box which require a siteId for site segmentation.  This is accomplish by initializing trakless with _tk.setSiteId(siteId).  You can also provide site id through script reference.
 
 ```
 <script src="url/to/trakless.min.js" data-siteid="777"></script>
@@ -67,7 +67,7 @@ To provide maximum flexibility, trackless emit two events: 'track' and 'tracked'
 
 ### on('track', fn(item))
 item.ht - the hit type
-item.ctx - the context object (additional data to pass into piel querystring)
+item.ctx - the context object (additional data to pass into pixel querystring)
 
 Example below intercept this event and change the context object.  This is how trakless, internally, intercept pageview and inject some pageview defaults.
 
