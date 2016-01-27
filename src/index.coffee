@@ -318,8 +318,8 @@ class mytrakless
   # @return {Object}
   ###
   setSiteId: (siteid) ->
-    mysid = parseInt(siteid)
-    $siteid = if mysid > 0 then mysid else $siteid
+    mysid = siteid + '';
+    $siteid = if (mysid != 'undefined' && mysid.length > 0) then mysid else $siteid
     return
 
   ###*
@@ -453,6 +453,18 @@ class mytrakless
       $trakless2.emit(en, ed)
     @
 
+  ###*
+   * Helpful utility method to parse script attribute
+   * @param  {string} src name match ex: 'trakless'
+   * @param  {string} attribute name handler
+  ###
+  parseScriptAttributes: (srcMatch, attrsHandler) ->
+    toMatch = new RegExp(srcMatch, 'i')
+    for script in win.document.getElementsByTagName("script")
+      if toMatch.test(script.src)
+        for prefix in ['','data-']
+          for k, fn of attrsHandler
+            fn script.getAttribute prefix+k
 
 # initialize $trakless2 to allow event pass to anybody listening on the parent
 trakless = new mytrakless
@@ -480,11 +492,7 @@ attrs =
     return unless typeof value is "string"
     trakless.setPixel(value)
 
-for script in win.document.getElementsByTagName("script")
-  if /trakless/i.test(script.src)
-    for prefix in ['','data-']
-      for k,fn of attrs
-        fn script.getAttribute prefix+k
+trakless.parseScriptAttributes 'trakless', attrs
 
 # initialize trakless as global
 win.trakless = trakless

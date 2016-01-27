@@ -3,7 +3,7 @@
   "main": "lib/index.js",
   "repo": "niiknow/trakless",
   "description": "Pixel tracking analytic.",
-  "version": "0.1.9",
+  "version": "0.2.0",
   "keywords": [
     "analytic",
     "pixel",
