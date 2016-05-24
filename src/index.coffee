@@ -478,7 +478,10 @@ if win.top != win
     traklessParent = win.top.trakless
     $trakless2 = traklessParent
   catch # swallow any security error
-    $trakless2 = win.parent.trakless
+    try 
+      $trakless2 = win.parent.trakless
+    catch
+      $trakless2 = null
 
 # plugin example
 trakless.on 'track', (item) ->
