@@ -9,7 +9,6 @@ SRC = $(wildcard src/*.coffee)
 MINIFY = $(BINS)/uglifyjs
 PID = test/server/pid.txt
 BINS = node_modules/.bin
-BUILD = build.js
 DUO = $(BINS)/duo
 DUOT = $(BINS)/duo-test -p test/server -R spec -P $(PORT) -c "make build.js"
 COFFEE = bin/coffee --js --bare
@@ -18,19 +17,21 @@ COFFEE = bin/coffee --js --bare
 # Default target.
 #
 
-default: build
-default: trakless.js
-default: lib/index.js
+default: main
 
 #
 # Clean.
 #
 
 clean:
-	@rm -rf components $(BUILD)
 	@rm -f trakless.js trakless.min.js
 	@rm -rf lib
+	@rm -rf build
+
+clean-all: clean
+	@rm -rf components
 	@rm -rf node_modules npm-debug.log
+
 #
 # Test with phantomjs.
 #
@@ -66,21 +67,22 @@ test-browser: $(BUILD)
 .PHONY: test-coverage
 .PHONY: test-sauce
 
+
 #
 # Target for `trakless.js` file.
 #
 
-trakless.js: node_modules $(SRC)
-	@$(DUO) --use duo-coffee src/index.coffee > trakless.js
+main: node_modules $(SRC)
+	@$(DUO) --use duo-coffee -S src/index.coffee > trakless.js
 	@$(MINIFY) trakless.js --output trakless.min.js
 
 #
-# Target for `*.js` file.
+# Target for `*.js` file for tests
 #
-
-
+#
 lib/%.js: node_modules $(SRC)
 	node_modules/coffee-script/bin/coffee --bare -c -o $(@D) $(patsubst lib/%,src/%,$(patsubst %.js,%.coffee,$@))
+
 #
 #
 # Target for `node_modules` folder.

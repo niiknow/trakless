@@ -27,13 +27,13 @@ $sessionid = new Date().getTime() - $st
 
 $defaults = null
 if(typeof(session) is 'undefined')
-  session = 
+  session =
     getItem: (k) ->
       return cookie(k)
     setItem: (k, v) ->
       return cookie(k, v, { path: '/' })
 
-try 
+try
   $sessionid = session.getItem('tklsid')
   if !$sessionid?
     # get time since january 2014
@@ -51,7 +51,7 @@ getImage = (cfgUrl, tks, qs, callback) ->
     image = new Image(1, 1)
 
     if (cfgUrl.indexOf('//') == 0)
-      cfgUrl = if win.location.protocol is'https' then "https:#{cfgUrl}" else "http:#{cfgUrl}" 
+      cfgUrl = if win.location.protocol is'https:' then "https:#{cfgUrl}" else "http:#{cfgUrl}"
 
     image.onload = ->
       iterator = 0
@@ -61,7 +61,7 @@ getImage = (cfgUrl, tks, qs, callback) ->
       return
     url = cfgUrl + (if cfgUrl.indexOf('?') < 0 then '?' else '&') + "#{tks}&#{qs}"
     image.src = url
-    return image 
+    return image
 
 ###*
  * determine if a object is dom
@@ -146,7 +146,7 @@ class util
       return v
     # attempt to parse the result from cookie
     return @parseJSON(v)
-  
+
   ###*
   # cookie
   #
@@ -161,7 +161,7 @@ class util
 
   ###*
    * Emitter
-   * 
+   *
   ###
   Emitter: Emitter
 
@@ -208,7 +208,7 @@ class tracker
     _tk: (data, ht, pixel) ->
       self = @
 
-      tkd = 
+      tkd =
         uuid: self.uuid
         siteid: self.siteid
         usid: $sessionid
@@ -249,7 +249,7 @@ class tracker
 
           if self.store?
             self.store.get('tklsuid').then (id) ->
-              if !id 
+              if !id
                 self.store.set('tklsuid', self.uuid)
               self.uuid = id or self.uuid
               $uuid = self.uuid
@@ -299,10 +299,10 @@ class mytrakless
       if (!hasNOL or win.navigator.onLine)
         item = queue.pop()
         if (item?)
-          self.emit('track', item)    
+          self.emit('track', item)
           for k, v of self.trackers
-            v.track(item.ht, item.ctx)   
-          self.emit('tracked', item)       
+            v.track(item.ht, item.ctx)
+          self.emit('tracked', item)
     , 222
 
     return self
@@ -382,7 +382,7 @@ class mytrakless
     self = @
     id = "#{$siteid}-#{$pixel}".replace(/[^a-zA-z]/gi, '$')
     if (!self.trackers[id]?)
-      self.getTracker() 
+      self.getTracker()
 
     return self.trackers[id]
 
@@ -478,7 +478,7 @@ if win.top != win
     traklessParent = win.top.trakless
     $trakless2 = traklessParent
   catch # swallow any security error
-    try 
+    try
       $trakless2 = win.parent.trakless
     catch
       $trakless2 = null
@@ -487,7 +487,7 @@ if win.top != win
 trakless.on 'track', (item) ->
   if (item.ht is 'pageview')
     myDef = webanalyser.get()
-    item.ctx = defaults(item.ctx, myDef) 
+    item.ctx = defaults(item.ctx, myDef)
 
 # auto init based on script attribute
 attrs =
